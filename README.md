@@ -13,7 +13,7 @@
 ### O que já foi implementado?
 
 - [ ] Rastreio de encomendas
-- [ ] Verificar o CPF e CNPJ
+- [x] Verificar o CPF e CNPJ
 
 ### Como acessar o bot?
 #### Bastas pesquisar no telegram diaszanoBot e iniciar.
