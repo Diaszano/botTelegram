@@ -1,4 +1,9 @@
 # https://github.com/github/gitignore/blob/main/Python.gitignore
+
+# Minha Pasta de senhas
+login/
+
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
