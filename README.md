@@ -2,8 +2,8 @@
 
 ## Esse bot do telegram vai conter várias aplicações e elas são:
 
-- [x] Rastreio de encomendas
-- [x] Verificar o CPF e CNPJ
+- Rastreio de encomendas
+- Verificar o CPF e CNPJ
 
 ### O que usamos na infraestrutura?
 - [x] [Utilizamos banco de dados mariadb para o armazenamento dos dados](https://mariadb.org/)
