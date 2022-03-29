@@ -6,7 +6,7 @@
 - Verificar o CPF e CNPJ
 
 ### O que usamos na infraestrutura?
-- [Utilizamos banco de dados mariadb para o armazenamento dos dados](https://mariadb.org/)
+- [Utilizamos banco de dados MariaDB para o armazenamento dos dados](https://mariadb.org/)
 - [Utilizamos a linguagem Python](https://www.python.org/)
 - [Utilizamos Telegram](https://web.telegram.org/z/)
 
