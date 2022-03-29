@@ -13,6 +13,7 @@ bot = telebot.TeleBot(dz.CHAVE_API);
 def rastrear(mensagem):
     codigo = mensagem.text.replace('/rastrear ','');
     print(codigo);
+    # asldka
     # print(mensagem);
     print(mensagem.text);
     url = f'https://proxyapp.correios.com.br/v1/sro-rastro/{codigo}';
