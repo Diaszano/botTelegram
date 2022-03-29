@@ -17,10 +17,11 @@ def rastrearEncomendaNova(codigo:str = '',idUser:str = '') -> list:
         informacoes = requests.get(url);
         todasInformacoes = informacoes.json();
         # print(todasInformacoes['objetos'][0]);
-        nome = {}
         if 'eventos' in todasInformacoes['objetos'][0]:
             eventos = todasInformacoes['objetos'][0]['eventos'];
-            print(todasInformacoes);
+            print(eventos);
+            for evento in eventos:
+                print(evento['descricao'],evento['dtHrCriado'],evento['unidade'],evento['unidadeDestino']);
         else:
             return False;
 
