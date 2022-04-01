@@ -3,6 +3,7 @@
 #-----------------------
 import telebot
 import requests
+import correios
 from login import senhas as dz
 #-----------------------
 # FUNÇÕES
@@ -11,22 +12,46 @@ def rastrearEncomendaBanco(codigo:str = '',idUser:str = '',novo:bool = False)-> 
     print('\noi\n');
     return False;
 
-def rastrearEncomendaNova(codigo:str = '',idUser:str = '') -> list:
+def rastrearEncomendaNova(codigo:str = '',idUser:str = '') -> bool:
     if not(rastrearEncomendaBanco(codigo=codigo,idUser=idUser,novo=True)):
         url = f'https://proxyapp.correios.com.br/v1/sro-rastro/{codigo}';
         informacoes = requests.get(url);
         todasInformacoes = informacoes.json();
-        # print(todasInformacoes['objetos'][0]);
         if 'eventos' in todasInformacoes['objetos'][0]:
-            eventos = todasInformacoes['objetos'][0]['eventos'];
-            print(eventos);
-            for evento in eventos:
-                print(evento['descricao'],evento['dtHrCriado'],evento['unidade'],evento['unidadeDestino']);
+            return limparMensagem(todasInformacoes['objetos'][0]['eventos']);
         else:
             return False;
 
-def limparMensagem(mensagem:dict = {}):
-    pass;
+def limparMensagem(eventos:dict = {}) -> str:
+    mensagem = '';
+    for evento in eventos:
+        for codigo in correios.codigos:
+            if codigo[0]['codigo'] == evento['codigo'] and int(codigo[1]['tipo']) == int(evento['tipo']):
+                mensagem += '\n';
+                if evento['codigo'] == 'BDE' or evento['codigo'] == 'PO':
+                    if len(codigo) < 4:
+                        mensagem += f"\n{codigo[2]['mensagem']} na cidade de {evento['unidade']['endereco']['cidade']}/{evento['unidade']['endereco']['uf']} {limpaData(evento['dtHrCriado'])}"
+                    else:
+                        mensagem += f"\t {codigo[3]['extra']}\n";
+                elif evento['codigo'] == 'PO':
+                    mensagem += f"\n{codigo[2]['mensagem']} na cidade de {evento['unidade']['endereco']['cidade']}/{evento['unidade']['endereco']['uf']} em uma {evento['unidade']['tipo']} {limpaData(evento['dtHrCriado'])}";
+                    if int(evento['tipo']) != 1:
+                        mensagem += f"\t{codigo[3]['extra']}\n";
+                elif evento['codigo'] == 'RO' or evento['codigo'] == 'DO':
+                    mensagem += f"\nObjeto em trânsito da cidade de {evento['unidade']['endereco']['cidade']}/{evento['unidade']['endereco']['uf']} para a cidade de {evento['unidadeDestino']['endereco']['cidade']}/{evento['unidadeDestino']['endereco']['uf']} {limpaData(evento['dtHrCriado'])}";
+                elif evento['codigo'] == 'OEC':
+                    mensagem += f"\n{codigo[2]['mensagem']} na cidade de {evento['unidade']['endereco']['cidade']}/{evento['unidade']['endereco']['uf']} {limpaData(evento['dtHrCriado'])}";
+                else:
+                    print(codigo);
+    return mensagem;
+
+def limpaData(data:str='')->str:
+    ano = data[:4];
+    mes = data[5:7];
+    dia = data[8:10];
+    hora= data[11:];
+    mensagem = f"no dia {dia}/{mes}/{ano} às {hora}";
+    return mensagem;
 
 def verificacaoDeCpf(numerosDoCpf:str = '000.000.000-00')->bool:
     cpf = [int(char) for char in numerosDoCpf if char.isdigit()];
@@ -70,6 +95,8 @@ if __name__ == '__main__':
         resposta = rastrearEncomendaNova(codigo=codigo,idUser=idUser);
         if resposta == False:
             resposta = f"Encomenda não localizada";
+            bot.reply_to(mensagem,resposta);
+        else:
             bot.reply_to(mensagem,resposta);
     
     @bot.message_handler(commands=["encomendas"])
