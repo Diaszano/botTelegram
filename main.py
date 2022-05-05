@@ -1,9 +1,9 @@
 #-----------------------
 # BIBLIOTECAS
 #-----------------------
+import re
 import telebot
 import requests
-import correios
 from login import senhas as dz
 #-----------------------
 # FUNÇÕES
@@ -12,45 +12,78 @@ def rastrearEncomendaBanco(codigo:str = '',idUser:str = '',novo:bool = False)-> 
     print('\noi\n');
     return False;
 
-def rastrearEncomendaNova(codigo:str = '',idUser:str = '') -> bool:
+def rastrearEncomendaNova(codigo:str = '',idUser:str = '') -> bool or list:
     if not(rastrearEncomendaBanco(codigo=codigo,idUser=idUser,novo=True)):
         url = f'https://proxyapp.correios.com.br/v1/sro-rastro/{codigo}';
         informacoes = requests.get(url);
-        todasInformacoes = informacoes.json();
-        if 'eventos' in todasInformacoes['objetos'][0]:
-            return limparMensagem(todasInformacoes['objetos'][0]['eventos']);
+        informacoes = str(informacoes.text);
+        print(informacoes);
+        informacoes = re.findall('(?P<Eventos>\"eventos\"\:)(?P<Dados_Eventos>\[.*?\])', informacoes, re.MULTILINE | re.IGNORECASE);
+        if informacoes != []:
+            informacoes    = str(informacoes);
+            informacoes    = re.findall('(?P<Eventos>\{\"codigo\"\:.*?\.png\"\})*', informacoes, re.MULTILINE | re.IGNORECASE);
+            resultados = [valor for valor in informacoes if valor != ''];
+            return limparMensagem(eventos=resultados);
         else:
             return False;
 
-def limparMensagem(eventos:dict = {}) -> str:
-    mensagem = '';
-    for evento in eventos:
-        for codigo in correios.codigos:
-            if codigo[0]['codigo'] == evento['codigo'] and int(codigo[1]['tipo']) == int(evento['tipo']):
-                mensagem += '\n';
-                if evento['codigo'] == 'BDE' or evento['codigo'] == 'PO':
-                    if len(codigo) < 4:
-                        mensagem += f"\n{codigo[2]['mensagem']} na cidade de {evento['unidade']['endereco']['cidade']}/{evento['unidade']['endereco']['uf']} {limpaData(evento['dtHrCriado'])}"
-                    else:
-                        mensagem += f"\t {codigo[3]['extra']}\n";
-                elif evento['codigo'] == 'PO':
-                    mensagem += f"\n{codigo[2]['mensagem']} na cidade de {evento['unidade']['endereco']['cidade']}/{evento['unidade']['endereco']['uf']} em uma {evento['unidade']['tipo']} {limpaData(evento['dtHrCriado'])}";
-                    if int(evento['tipo']) != 1:
-                        mensagem += f"\t{codigo[3]['extra']}\n";
-                elif evento['codigo'] == 'RO' or evento['codigo'] == 'DO':
-                    mensagem += f"\nObjeto em trânsito da cidade de {evento['unidade']['endereco']['cidade']}/{evento['unidade']['endereco']['uf']} para a cidade de {evento['unidadeDestino']['endereco']['cidade']}/{evento['unidadeDestino']['endereco']['uf']} {limpaData(evento['dtHrCriado'])}";
-                elif evento['codigo'] == 'OEC':
-                    mensagem += f"\n{codigo[2]['mensagem']} na cidade de {evento['unidade']['endereco']['cidade']}/{evento['unidade']['endereco']['uf']} {limpaData(evento['dtHrCriado'])}";
+def limparMensagem(eventos:list = []) -> list:
+    rastreio = '';
+    for resultado in eventos:
+        dia       = '';
+        tipo      = '';
+        local     = '';
+        destino   = '';
+        detalhe   = '';
+        descricao = '';
+        if 'descricao' in resultado:
+            temp      = re.findall('((\"descricao\"\:)(\".*?\"))', resultado, re.MULTILINE | re.IGNORECASE);
+            temp      = str(temp[0][2]);
+            temp      = temp.replace('"','');
+            descricao = temp;
+        if 'detalhe' in resultado:
+            temp    = re.findall('((\"detalhe\"\:)(\".*?\"))', resultado, re.MULTILINE | re.IGNORECASE);
+            temp    = temp[0][2];
+            temp    = temp.replace('"','');
+            detalhe = temp;
+        if 'dtHrCriado' in resultado:
+            temp = re.findall('((\"dtHrCriado\"\:)(\".*?\"))', resultado, re.MULTILINE | re.IGNORECASE);
+            temp = temp[0][2]
+            temp = temp.replace('"','');
+            dia  = temp;
+        if 'tipo' in resultado:
+            tipo = re.findall('((\"tipo\"\:)(\"[^0-9]*?\"))', resultado, re.MULTILINE | re.IGNORECASE);
+            if tipo != []:
+                temp = re.findall('(?:\"unidade\"\:\{\"endereco\"\:\{"cidade"\:)(\".*?\"),(?:\"uf\"\:)(\".*?\")', resultado, re.MULTILINE | re.IGNORECASE);
+                if temp != []:
+                    temp        = temp[0];
+                    [cidade,uf] = [temp[0],temp[1]];
+                    uf          = uf.replace('"','');
+                    cidade      = cidade.replace('"','');
+                    local       = f'[{cidade}/{uf}]';
                 else:
-                    print(codigo);
-    return mensagem;
+                    temp  = re.findall('(?:\"unidade\"\:\{\"codSro\"\:\".*?\"(?:\,)\"endereco\"\:\{\}\,\"nome"\:)(\".*?\")', resultado, re.MULTILINE | re.IGNORECASE);
+                    if temp != []:
+                        temp  = temp[0].replace('"','');
+                        local = f'[{temp}]';
+        if '' in resultado:
+            temp  = re.findall('(?:\"unidadeDestino\"\:\{\"endereco\"\:\{\"cidade\":)(\".*?\")(?:,\"uf\"\:)(\".*?\")', resultado, re.MULTILINE | re.IGNORECASE);
+            if temp != []:
+                temp        = temp[0];
+                [cidade,uf] = [temp[0],temp[1]];
+                uf          = uf.replace('"','');
+                cidade      = cidade.replace('"','');
+                destino     = f' para [{cidade}/{uf}]';
+        rastreio += f'[{limpaData(dia)}] - {descricao} {local}{destino}\n{detalhe}\n\n'
+    print(rastreio);
+    return rastreio;
 
 def limpaData(data:str='')->str:
     ano = data[:4];
     mes = data[5:7];
     dia = data[8:10];
     hora= data[11:];
-    mensagem = f"no dia {dia}/{mes}/{ano} às {hora}";
+    mensagem = f"{dia}/{mes}/{ano} - {hora}";
     return mensagem;
 
 def verificacaoDeCpf(numerosDoCpf:str = '000.000.000-00')->bool:
