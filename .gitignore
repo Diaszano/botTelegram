@@ -2,7 +2,7 @@
 
 # Minha Pasta de senhas
 login/
-data/*.db
+data/
 
 
 # Byte-compiled / optimized / DLL files
