@@ -14,10 +14,23 @@ from verificadores import Verificadores
 #-----------------------
 # bot.send_message(mensagem.chat.id,resposta);
 # 
-def banco(db:DataBase=DataBase())->None:
+def banco(db:DataBase=DataBase(),rastreador:Rastreio=Rastreio())->None:
     while True:
-        print("oi")
-        time.sleep(5);
+        if(db.validar() >= 15):
+            dados = db.select();
+            if(dados != []):
+                id_user = dados[0];
+                codigo  = dados[1];
+                info    = dados[2];
+                nome    = dados[3];
+                novo_info = rastreador.rastrear(codigo=codigo);
+                db.update(id_user=id_user,codigo=codigo,mensagem=novo_info);
+                if(info != novo_info):
+                    resposta = f"Temos atualizações da sua encomenda {nome}\n\n{novo_info}Encomenda: {nome}";
+                    bot = telebot.TeleBot(senhas.CHAVE_API);
+                    bot.send_message(id_user,resposta);
+        else:
+            time.sleep(30);
 
 def app(db:DataBase=DataBase(),verificador:Verificadores=Verificadores(),rastreador:Rastreio=Rastreio())->None:
     bot = telebot.TeleBot(senhas.CHAVE_API);
