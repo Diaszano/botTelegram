@@ -22,14 +22,14 @@ class Verificadores:
             return True;
         return False;
     
-    def CPF(self,CPF:str = '000.000.000-00')->bool:
-        cpf = [int(char) for char in CPF if char.isdigit()];
-        if len(cpf) != 11 or cpf == cpf[::-1]:
+    def CPF(self,cpf:str = '000.000.000-00')->bool:
+        cpf_novo = [int(char) for char in cpf if char.isdigit()];
+        if len(cpf_novo) != 11 or cpf_novo == cpf_novo[::-1]:
             return False;
         for i in range(9, 11):
-            valor  = sum((cpf[num] * ((i + 1) - num) for num in range(0, i)));
+            valor  = sum((cpf_novo[num] * ((i + 1) - num) for num in range(0, i)));
             digito = ((valor * 10) % 11) % 10;
-            if digito != cpf[i]:
+            if digito != cpf_novo[i]:
                 return False;
         return True;
 #-----------------------

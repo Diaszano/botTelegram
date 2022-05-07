@@ -141,10 +141,10 @@ class DataBase():
     # -----------------------
     def creat_table_cnpj(self,comando:str='') -> None:
         if(comando == ''):
-            comando =   """ CREATE TABLE IF NOT EXISTS cpf(
+            comando =   """ CREATE TABLE IF NOT EXISTS cnpj(
                             id              INTEGER primary key autoincrement,
                             id_user         TEXT NOT NULL,
-                            CNPJ             TEXT NOT NULL,
+                            CNPJ            TEXT NOT NULL,
                             status          TEXT NOT NULL,
                             dia             TEXT NOT NULL)
                         """;
@@ -159,6 +159,8 @@ class DataBase():
                         """;
         if(comando_tuple == []):
             comando_tuple = ('id_user', 'CNPJ', 'status', 'dia');
+            return;
+        if(self.verifica_cnpj(id_user=comando_tuple[0],CNPJ=comando_tuple[1])):
             return;
         self.insert_cpf(comando=comando,comando_tuple=comando_tuple);
 

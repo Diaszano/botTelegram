@@ -72,14 +72,16 @@ def app(db:DataBase=DataBase(),verificador:Verificadores=Verificadores(),rastrea
     @bot.message_handler(commands=["cpf","CPF"])
     def cpf_funcao(mensagem):
         informacoes = str(mensagem.text);
-        informacoes = informacoes.replace('.'|'-'|'/','');
+        informacoes = informacoes.replace('.','').replace('-','').replace('/','');
         idUser   = mensagem.chat.id;
         informacoes = re.findall(   r'(?P<CPF_sem_pontos>[0-9]{11})(?:\n)*'
                                     ,informacoes,re.MULTILINE | re.IGNORECASE);
+        print(informacoes)
         if(informacoes != []):
             cpf    = informacoes[0];
+            print(cpf)
             cpf    = str(cpf);
-            valido = verificador.CPF(CPF=cpf);
+            valido = verificador.CPF(cpf);
             if valido:
                 resposta = f"O cpf é válido";
                 valido   = f'True';
@@ -89,20 +91,20 @@ def app(db:DataBase=DataBase(),verificador:Verificadores=Verificadores(),rastrea
             tupla = (idUser,cpf,valido);
             db.insert_cpf(comando_tuple=tupla);
             bot.reply_to(mensagem,resposta);
+            return;
         resposta = f"Infelizmente solicitação inválida";
         bot.reply_to(mensagem,resposta);
     
-    @bot.message_handler(commands=["cnpj"])
+    @bot.message_handler(commands=["cnpj","CNPJ"])
     def cnpj_funcao(mensagem):
         informacoes = str(mensagem.text);
-        informacoes = informacoes.replace('.'|'-'|'/','');
+        informacoes = informacoes.replace('.','').replace('-','').replace('/','');
         idUser   = mensagem.chat.id;
         informacoes = re.findall(   r'(?P<CNPJ_sem_pontos>[0-9]{14})(?:\n)*'
                                     ,informacoes,re.MULTILINE | re.IGNORECASE);
         if(informacoes != []):
             cnpj    = informacoes[0];
             cnpj    = str(cnpj);
-            cnpj    = cnpj.replace('.','').replace('-','');
             valido = verificador.CNPJ(cnpj=cnpj);
             if valido:
                 resposta = f"O cnpj é válido";
@@ -113,6 +115,7 @@ def app(db:DataBase=DataBase(),verificador:Verificadores=Verificadores(),rastrea
             tupla = (idUser,cnpj,valido);
             db.insert_cnpj(comando_tuple=tupla);
             bot.reply_to(mensagem,resposta);
+            return;
         resposta = f"Infelizmente solicitação inválida";
         bot.reply_to(mensagem,resposta);
     
@@ -137,6 +140,8 @@ if __name__ == '__main__':
     verificador = Verificadores();
     rastreador  = Rastreio();
     db.creat_table();
+    db.creat_table_cnpj();
+    db.creat_table_cpf();
     # Cria a Thread
     thread_banco = threading.Thread(target=banco, args=(db,));
     thread_app   = threading.Thread(target=app, args=(db,verificador,rastreador,));
