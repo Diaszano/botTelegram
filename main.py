@@ -10,13 +10,17 @@ from database import DataBase
 from rastreador import Rastreio
 from verificadores import Verificadores
 #-----------------------
+# CONSTANTES
+#-----------------------
+TEMPO_MAXIMO = 5;
+#-----------------------
 # FUNÇÕES()
 #-----------------------
 # bot.send_message(mensagem.chat.id,resposta);
 # 
 def banco(db:DataBase=DataBase(),rastreador:Rastreio=Rastreio())->None:
     while True:
-        if(db.validar_rastreio() >= 15):
+        if(db.validar_rastreio() >= TEMPO_MAXIMO):
             dados = db.select_rastreio();
             if(dados != []):
                 id_user = dados[0];
@@ -29,12 +33,17 @@ def banco(db:DataBase=DataBase(),rastreador:Rastreio=Rastreio())->None:
                     resposta = f"Temos atualizações da sua encomenda {nome}\n\n{novo_info}Encomenda: {nome}";
                     bot = telebot.TeleBot(senhas.CHAVE_API);
                     bot.send_message(id_user,resposta);
+        elif(db.validar_rastreio() == 0):
+            tempo = TEMPO_MAXIMO * 60;
+            time.sleep(tempo);
         else:
-            time.sleep(30);
+            tempo = TEMPO_MAXIMO * 60;
+            tempo_de_espera = tempo - (db.validar_rastreio() / 60);
+            time.sleep(tempo_de_espera);
 
 def app(db:DataBase=DataBase(),verificador:Verificadores=Verificadores(),rastreador:Rastreio=Rastreio())->None:
     bot = telebot.TeleBot(senhas.CHAVE_API);
-    @bot.message_handler(commands=["rastrear"])
+    @bot.message_handler(commands=["rastrear","rastrear".upper()])
     def rastrear(mensagem):
         informacoes = mensagem.text;
         informacoes = re.findall(   r'(?P<Codigo>[a-z]{2}[0-9]{9}[a-z]{2})(?:\n)*(?:.[^a-z0-9])*(?:\s)*(?:\n)*(?P<Nome>.*)(?:\n)*'
@@ -50,6 +59,7 @@ def app(db:DataBase=DataBase(),verificador:Verificadores=Verificadores(),rastrea
             else:
                 codigo   = informacoes[0];
                 nome     = informacoes[1];
+            codigo = str(codigo).upper();
             idUser   = mensagem.chat.id;
             resposta = f"Procurando encomenda";
             bot.reply_to(mensagem,resposta);
@@ -76,10 +86,8 @@ def app(db:DataBase=DataBase(),verificador:Verificadores=Verificadores(),rastrea
         idUser   = mensagem.chat.id;
         informacoes = re.findall(   r'(?P<CPF_sem_pontos>[0-9]{11})(?:\n)*'
                                     ,informacoes,re.MULTILINE | re.IGNORECASE);
-        print(informacoes)
         if(informacoes != []):
             cpf    = informacoes[0];
-            print(cpf)
             cpf    = str(cpf);
             valido = verificador.CPF(cpf);
             if valido:
@@ -143,7 +151,7 @@ if __name__ == '__main__':
     db.creat_table_cnpj();
     db.creat_table_cpf();
     # Cria a Thread
-    thread_banco = threading.Thread(target=banco, args=(db,));
+    thread_banco = threading.Thread(target=banco, args=(db,rastreador,));
     thread_app   = threading.Thread(target=app, args=(db,verificador,rastreador,));
     # Inicia a Thread
     thread_banco.start();

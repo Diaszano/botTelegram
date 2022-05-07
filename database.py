@@ -35,7 +35,7 @@ class DataBase():
         except:
             pass;
 
-    def dif_minutos(self,date1):
+    def dif_minutos(self,date1)->int:
         data_agora = datetime.now();
         date2      = data_agora.strftime('%Y-%m-%d %H:%M:%S');
         d1         = datetime.strptime(date1, '%Y-%m-%d %H:%M:%S');
@@ -257,7 +257,7 @@ class DataBase():
             if Connection:
                 Connection.close();
 
-    def validar_rastreio(self,comando:str=''):
+    def validar_rastreio(self,comando:str='')->int:
         if(comando == ''):
             comando =   f'SELECT data FROM encomenda ORDER BY data LIMIT 1';
         try:
