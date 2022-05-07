@@ -137,15 +137,7 @@ def app(db:DataBase=DataBase(),verificador:Verificadores=Verificadores(),rastrea
 
     @bot.message_handler(func=verificar)
     def responder(mensagem):
-        texto = """
-        Escolha uma opção para continuar :
-        \tPara rastrear sua encomenda:
-        \t\t/rastrear "código" - "Nome do Produto"
-        \t\tExemplo /rastrear QK395235673BR - Controle
-        \tPara verificar cpf ou cnpj:
-        \t\t/cpf "o cpf da consulta"
-        \t\t/cnpj "o cnpj da consulta"
-        Responder qualquer outra coisa não vai funcionar, clique em uma das opções"""
+        texto = """Escolha uma opção para continuar:\nPara rastrear sua encomenda:\n\n/rastrear "código" - "Nome do Produto"\n\nPara ver suas encomendas guardadas:\n\n/encomendas\n\nPara verificar cpf ou cnpj:\n\n/cpf "o cpf da consulta"\n/cnpj "o cnpj da consulta"\n\nSe responder qualquer outra coisa não vai funcionar"""
         bot.reply_to(mensagem, texto);
     bot.polling();
 #-----------------------
