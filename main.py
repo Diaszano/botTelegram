@@ -39,29 +39,28 @@ def app(db:DataBase=DataBase(),verificador:Verificadores=Verificadores(),rastrea
         informacoes = mensagem.text;
         informacoes = re.findall(   r'(?P<Codigo>[a-z]{2}[0-9]{9}[a-z]{2})(?:\n)*(?:.[^a-z0-9])*(?:\s)*(?:\n)*(?P<Nome>.*)(?:\n)*'
                                     ,informacoes,re.MULTILINE | re.IGNORECASE);
-        if(informacoes == []):
-            return;
-        informacoes = informacoes[0];
-        if(len(informacoes) != 2):
-            if(re.findallr(r'(?P<Codigo>[a-z]{2}[0-9]{9}[a-z]{2})(?:\n)*',informacoes,re.MULTILINE | re.IGNORECASE) == []):
-                return;
+        if(informacoes != []):
+            informacoes = informacoes[0];
+            if(len(informacoes) != 2):
+                if(re.findallr(r'(?P<Codigo>[a-z]{2}[0-9]{9}[a-z]{2})(?:\n)*',informacoes,re.MULTILINE | re.IGNORECASE) == []):
+                    return;
+                else:
+                    codigo   = informacoes[0];
+                    nome     = '';
             else:
                 codigo   = informacoes[0];
-                nome     = '';
-        else:
-            codigo   = informacoes[0];
-            nome     = informacoes[1];
-        idUser   = mensagem.chat.id;
-        resposta = f"Procurando encomenda";
-        bot.reply_to(mensagem,resposta);
-        dados = rastreador.rastrear(codigo=codigo);
-        if(dados != ''):
-            resposta = f"{dados}Encomenda: {nome}";
+                nome     = informacoes[1];
+            idUser   = mensagem.chat.id;
+            resposta = f"Procurando encomenda";
             bot.reply_to(mensagem,resposta);
-            # ('id_user','codigo','nome_rastreio','informacoes');
-            tupla = (idUser,codigo,nome,dados);
-            db.insert_rastreio(comando_tuple=tupla);
-            return;
+            dados = rastreador.rastrear(codigo=codigo);
+            if(dados != ''):
+                resposta = f"{dados}Encomenda: {nome}";
+                bot.reply_to(mensagem,resposta);
+                # ('id_user','codigo','nome_rastreio','informacoes');
+                tupla = (idUser,codigo,nome,dados);
+                db.insert_rastreio(comando_tuple=tupla);
+                return;
         resposta = f"Infelizmente {nome} {codigo} não foi encontrada."
         bot.reply_to(mensagem,resposta);
     
@@ -72,26 +71,49 @@ def app(db:DataBase=DataBase(),verificador:Verificadores=Verificadores(),rastrea
     
     @bot.message_handler(commands=["cpf","CPF"])
     def cpf_funcao(mensagem):
-        cpf = mensagem.text;
-        cpf = cpf.lower();
-        cpf = cpf.replace('/cpf ','');
-        valido = verificador.CPF(CPF=cpf);
-        if valido:
-            resposta = f"O cpf é válido";
-        else:
-            resposta = f"O cpf é inválido";
+        informacoes = str(mensagem.text);
+        informacoes = informacoes.replace('.'|'-'|'/','');
+        idUser   = mensagem.chat.id;
+        informacoes = re.findall(   r'(?P<CPF_sem_pontos>[0-9]{11})(?:\n)*'
+                                    ,informacoes,re.MULTILINE | re.IGNORECASE);
+        if(informacoes != []):
+            cpf    = informacoes[0];
+            cpf    = str(cpf);
+            valido = verificador.CPF(CPF=cpf);
+            if valido:
+                resposta = f"O cpf é válido";
+                valido   = f'True';
+            else:
+                resposta = f"O cpf é inválido";
+                valido   = f'False';
+            tupla = (idUser,cpf,valido);
+            db.insert_cpf(comando_tuple=tupla);
+            bot.reply_to(mensagem,resposta);
+        resposta = f"Infelizmente solicitação inválida";
         bot.reply_to(mensagem,resposta);
     
     @bot.message_handler(commands=["cnpj"])
     def cnpj_funcao(mensagem):
-        cnpj = mensagem.text
-        cnpj = cnpj.lower();
-        cnpj = cnpj.replace('/cnpj ','');
-        valido = verificador.CNPJ(cnpj=cnpj);
-        if valido:
-            resposta = f"O cnpj é válido";
-        else:
-            resposta = f"O cnpj é inválido";
+        informacoes = str(mensagem.text);
+        informacoes = informacoes.replace('.'|'-'|'/','');
+        idUser   = mensagem.chat.id;
+        informacoes = re.findall(   r'(?P<CNPJ_sem_pontos>[0-9]{14})(?:\n)*'
+                                    ,informacoes,re.MULTILINE | re.IGNORECASE);
+        if(informacoes != []):
+            cnpj    = informacoes[0];
+            cnpj    = str(cnpj);
+            cnpj    = cnpj.replace('.','').replace('-','');
+            valido = verificador.CNPJ(cnpj=cnpj);
+            if valido:
+                resposta = f"O cnpj é válido";
+                valido   = f'True';
+            else:
+                resposta = f"O cnpj é inválido";
+                valido   = f'False';
+            tupla = (idUser,cnpj,valido);
+            db.insert_cnpj(comando_tuple=tupla);
+            bot.reply_to(mensagem,resposta);
+        resposta = f"Infelizmente solicitação inválida";
         bot.reply_to(mensagem,resposta);
     
     def verificar(mensagem):
