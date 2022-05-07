@@ -140,8 +140,11 @@ def app(db:DataBase=DataBase(),verificador:Verificadores=Verificadores(),rastrea
         texto = """
         Escolha uma opção para continuar :
         \tPara rastrear sua encomenda:
-        \t\t/rastrear "codido"
-        \t\tExemplo /rastrear QK395235673BR
+        \t\t/rastrear "código" - "Nome do Produto"
+        \t\tExemplo /rastrear QK395235673BR - Controle
+        \tPara verificar cpf ou cnpj:
+        \t\t/cpf "o cpf da consulta"
+        \t\t/cnpj "o cnpj da consulta"
         Responder qualquer outra coisa não vai funcionar, clique em uma das opções"""
         bot.reply_to(mensagem, texto);
     bot.polling();
