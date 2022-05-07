@@ -23,7 +23,9 @@ class DataBase():
             self.nome = f'{self.nome}{arquivo}';
         else:
             self.nome = nome;
-
+    # -----------------------
+    # OUTROS
+    # -----------------------
     def conexao(self) -> None:
         self.connection = sqlite3.connect(self.nome);
     
@@ -32,6 +34,16 @@ class DataBase():
             self.connection.close();
         except:
             pass;
+
+    def dif_minutos(self,date1):
+        data_agora = datetime.now();
+        date2      = data_agora.strftime('%Y-%m-%d %H:%M:%S');
+        d1         = datetime.strptime(date1, '%Y-%m-%d %H:%M:%S');
+        d2         = datetime.strptime(date2, '%Y-%m-%d %H:%M:%S');
+        resultado  = d2-d1;
+        minutes    = resultado.total_seconds() / 60;
+        minutes    = int(minutes);
+        return abs(minutes);
     
     def creat_table(self,comando:str='') -> None:
         if(comando == ''):
@@ -49,16 +61,120 @@ class DataBase():
             cursor = Connection.cursor();
             cursor.execute(comando);
             Connection.commit();
-            # print("Comando efetuado com sucesso", cursor.rowcount);
             cursor.close();
         except sqlite3.Error as error:
             print("Falha do comando", error);
+            if Connection:
+                Connection.close();
         finally:
             if Connection:
                 Connection.close();
-                # print("Conexão com SQLite está fechada");
+    # -----------------------
+    # CPF
+    # -----------------------
+    def creat_table_cpf(self,comando:str='') -> None:
+        if(comando == ''):
+            comando =   """ CREATE TABLE IF NOT EXISTS cpf(
+                            id              INTEGER primary key autoincrement,
+                            id_user         TEXT NOT NULL,
+                            CPF             TEXT NOT NULL,
+                            status          TEXT NOT NULL,
+                            dia             TEXT NOT NULL)
+                        """;
+        self.creat_table(comando=comando);
+    
+    def insert_cpf(self,comando:str='',comando_tuple=[]) -> None:
+        if(comando == ''):
+            comando =   """ 
+                            INSERT INTO cpf
+                            (id_user, CPF, status, dia)
+                            VALUES(?, ?, ?,(SELECT DATETIME('now','localtime')))
+                        """;
+        if(comando_tuple == []):
+            comando_tuple = ('id_user', 'CPF', 'status', 'dia');
+            return;
+        if(self.verifica_cpf(id_user=comando_tuple[0],CPF=comando_tuple[1])):
+            return;
+        try:
+            self.conexao();
+            Connection = self.connection;
+            cursor = Connection.cursor();
+            cursor.execute(comando, comando_tuple);
+            Connection.commit();
+            cursor.close();
+        except sqlite3.Error as error:
+            print("Falha do comando", error);
+            if Connection:
+                Connection.close();
+        finally:
+            if Connection:
+                Connection.close();
 
-    def verifica(self,comando:str='',id_user:str='',codigo:str='')->bool:
+    def verifica_cpf(self,comando:str='',id_user:str='',CPF:str='')->bool:
+        if(id_user == '' or CPF == ''):
+            return False;
+        if(comando == ''):
+            comando =   f""" 
+                            SELECT * FROM cpf
+                            WHERE id_user='{id_user}' AND CPF LIKE '{CPF}%'
+                        """;
+        try:
+            self.conexao();
+            Connection = self.connection;
+            cursor = Connection.cursor();
+            cursor.execute(comando);
+            if cursor.fetchall() != []:
+                cursor.close();
+                return True;
+            cursor.close();
+            return False;
+        except sqlite3.Error as error:
+            print("Falha do comando", error);
+            if Connection:
+                Connection.close();
+            return False;
+        finally:
+            if Connection:
+                Connection.close();
+    # -----------------------    
+    # CNPJ
+    # -----------------------
+    def creat_table_cnpj(self,comando:str='') -> None:
+        if(comando == ''):
+            comando =   """ CREATE TABLE IF NOT EXISTS cpf(
+                            id              INTEGER primary key autoincrement,
+                            id_user         TEXT NOT NULL,
+                            CNPJ             TEXT NOT NULL,
+                            status          TEXT NOT NULL,
+                            dia             TEXT NOT NULL)
+                        """;
+        self.creat_table(comando=comando);
+    
+    def insert_cnpj(self,comando:str='',comando_tuple=[]) -> None:
+        if(comando == ''):
+            comando =   """ 
+                            INSERT INTO cnpj
+                            (id_user, CNPJ, status, dia)
+                            VALUES(?, ?, ?,(SELECT DATETIME('now','localtime')))
+                        """;
+        if(comando_tuple == []):
+            comando_tuple = ('id_user', 'CNPJ', 'status', 'dia');
+            return;
+        self.insert_cpf(comando=comando,comando_tuple=comando_tuple);
+
+    def verifica_cnpj(self,comando:str='',id_user:str='',CNPJ:str='')->bool:
+        if(id_user == '' or CNPJ == ''):
+            return False;
+        if(comando == ''):
+            comando =   f""" 
+                            SELECT * FROM cnpj
+                            WHERE id_user='{id_user}' AND CNPJ LIKE '{CNPJ}%'
+                        """;
+        return self.verifica_cpf(comando=comando,id_user=id_user,CPF=CNPJ);
+    # -----------------------    
+    # RASTREIO
+    # -----------------------
+    def verifica_rastreio(self,comando:str='',id_user:str='',codigo:str='')->bool:
         if(id_user == '' or codigo == ''):
             return False;
         if(comando == ''):
@@ -71,9 +187,7 @@ class DataBase():
             self.conexao();
             Connection = self.connection;
             cursor = Connection.cursor();
-            # print("Conexão com SQLite efetuada com sucesso");
             cursor.execute(comando);
-            # print("Comando efetuado com sucesso", cursor.rowcount);
             if cursor.fetchall() != []:
                 cursor.close();
                 return True;
@@ -81,12 +195,14 @@ class DataBase():
             return False;
         except sqlite3.Error as error:
             print("Falha do comando", error);
+            if Connection:
+                Connection.close();
+            return False;
         finally:
             if Connection:
                 Connection.close();
-                # print("Conexão com SQLite está fechada");
     
-    def insert(self,comando:str='',comando_tuple=[]) -> None:
+    def insert_rastreio(self,comando:str='',comando_tuple=[]) -> None:
         if(comando == ''):
             comando =   """ 
                             INSERT INTO encomenda
@@ -95,45 +211,32 @@ class DataBase():
                         """;
         if(comando_tuple == []):
             comando_tuple = ('id_user','codigo','nome_rastreio','data','informacoes');
-        if(self.verifica(id_user=comando_tuple[0],codigo=comando_tuple[1])):
+        if(self.verifica_rastreio(id_user=comando_tuple[0],codigo=comando_tuple[1])):
             return;
         try:
             self.conexao();
             Connection = self.connection;
             cursor = Connection.cursor();
-            # print("Conexão com SQLite efetuada com sucesso");
             cursor.execute(comando, comando_tuple);
             Connection.commit();
-            # print("Comando efetuado com sucesso", cursor.rowcount);
             cursor.close();
         except sqlite3.Error as error:
             print("Falha do comando", error);
+            if Connection:
+                Connection.close();
         finally:
             if Connection:
                 Connection.close();
-                # print("Conexão com SQLite está fechada");
 
-    def dif_minutos(self,date1):
-        data_agora = datetime.now();
-        date2      = data_agora.strftime('%Y-%m-%d %H:%M:%S');
-        d1         = datetime.strptime(date1, '%Y-%m-%d %H:%M:%S');
-        d2         = datetime.strptime(date2, '%Y-%m-%d %H:%M:%S');
-        resultado  = d2-d1;
-        minutes    = resultado.total_seconds() / 60;
-        minutes    = int(minutes);
-        return abs(minutes);
-
-    def select(self,comando:str=''):
+    def select_rastreio(self,comando:str=''):
         if(comando == ''):
             comando =   f'SELECT id_user, codigo, informacoes, nome_rastreio FROM encomenda ORDER BY data LIMIT 1';
         try:
             self.conexao();
             Connection = self.connection;
             cursor = Connection.cursor();
-            # print("Conexão com SQLite efetuada com sucesso");
             cursor.execute(comando);
             data = cursor.fetchall();
-            # print("Comando efetuado com sucesso", cursor.rowcount);
             if data != []:
                 id_user = str(data[0][0]);
                 codigo  = str(data[0][1]);
@@ -144,22 +247,23 @@ class DataBase():
             cursor.close();
             return [];
         except sqlite3.Error as error:
+            print("Falha do comando", error);
             if Connection:
                 Connection.close();
                 return [];
-                # print("Conexão com SQLite está fechada");
+        finally:
+            if Connection:
+                Connection.close();
 
-    def validar(self,comando:str=''):
+    def validar_rastreio(self,comando:str=''):
         if(comando == ''):
             comando =   f'SELECT data FROM encomenda ORDER BY data LIMIT 1';
         try:
             self.conexao();
             Connection = self.connection;
             cursor = Connection.cursor();
-            # print("Conexão com SQLite efetuada com sucesso");
             cursor.execute(comando);
             data = cursor.fetchall();
-            # print("Comando efetuado com sucesso", cursor.rowcount);
             if data != []:
                 data = str(data[0][0]);
                 data = self.dif_minutos(data);
@@ -168,12 +272,15 @@ class DataBase():
             cursor.close();
             return 0;
         except sqlite3.Error as error:
+            print("Falha do comando", error);
             if Connection:
                 Connection.close();
                 return 0;
-                # print("Conexão com SQLite está fechada");
+        finally:
+            if Connection:
+                Connection.close();
     
-    def update(self,id_user:str='',codigo:str='',comando:str='',mensagem:str='') -> bool:
+    def update_rastreio(self,id_user:str='',codigo:str='',comando:str='',mensagem:str='') -> bool:
         if(comando == ''):
             comando =   f""" UPDATE encomenda
                             SET 'data'=(SELECT DATETIME('now','localtime')), 
@@ -184,22 +291,23 @@ class DataBase():
             self.conexao();
             Connection = self.connection;
             cursor = Connection.cursor();
-            # print("Conexão com SQLite efetuada com sucesso");
             cursor.execute(comando);
             Connection.commit();
-            # print("Comando efetuado com sucesso", cursor.rowcount);
             cursor.close();
         except sqlite3.Error as error:
             print("Falha do comando", error);
+            if Connection:
+                Connection.close();
         finally:
             if Connection:
                 Connection.close();
-                # print("Conexão com SQLite está fechada");
+    # -----------------------
 #-----------------------
 # MAIN()
 #-----------------------
 if(__name__ == "__main__"):
     db = DataBase();
     db.creat_table();
-    db.validar()
+    db.creat_table_cnpj();
+    db.creat_table_cpf();
 #-----------------------

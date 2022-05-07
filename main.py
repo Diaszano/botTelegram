@@ -16,15 +16,15 @@ from verificadores import Verificadores
 # 
 def banco(db:DataBase=DataBase(),rastreador:Rastreio=Rastreio())->None:
     while True:
-        if(db.validar() >= 15):
-            dados = db.select();
+        if(db.validar_rastreio() >= 15):
+            dados = db.select_rastreio();
             if(dados != []):
                 id_user = dados[0];
                 codigo  = dados[1];
                 info    = dados[2];
                 nome    = dados[3];
                 novo_info = rastreador.rastrear(codigo=codigo);
-                db.update(id_user=id_user,codigo=codigo,mensagem=novo_info);
+                db.update_rastreio(id_user=id_user,codigo=codigo,mensagem=novo_info);
                 if(info != novo_info):
                     resposta = f"Temos atualizações da sua encomenda {nome}\n\n{novo_info}Encomenda: {nome}";
                     bot = telebot.TeleBot(senhas.CHAVE_API);
@@ -60,7 +60,7 @@ def app(db:DataBase=DataBase(),verificador:Verificadores=Verificadores(),rastrea
             bot.reply_to(mensagem,resposta);
             # ('id_user','codigo','nome_rastreio','informacoes');
             tupla = (idUser,codigo,nome,dados);
-            db.insert(comando_tuple=tupla);
+            db.insert_rastreio(comando_tuple=tupla);
             return;
         resposta = f"Infelizmente {nome} {codigo} não foi encontrada."
         bot.reply_to(mensagem,resposta);
