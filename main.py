@@ -43,7 +43,7 @@ def banco(db:DataBase=DataBase(),rastreador:Rastreio=Rastreio())->None:
 
 def app(db:DataBase=DataBase(),verificador:Verificadores=Verificadores(),rastreador:Rastreio=Rastreio())->None:
     bot = telebot.TeleBot(senhas.CHAVE_API);
-    @bot.message_handler(commands=["rastrear","rastrear".upper()])
+    @bot.message_handler(commands=["rastrear","RASTREAR"])
     def rastrear(mensagem):
         informacoes = mensagem.text;
         informacoes = re.findall(   r'(?P<Codigo>[a-z]{2}[0-9]{9}[a-z]{2})(?:\n)*(?:.[^a-z0-9])*(?:\s)*(?:\n)*(?P<Nome>.*)(?:\n)*'
@@ -74,7 +74,7 @@ def app(db:DataBase=DataBase(),verificador:Verificadores=Verificadores(),rastrea
         resposta = f"Infelizmente {nome} {codigo} não foi encontrada."
         bot.reply_to(mensagem,resposta);
     
-    @bot.message_handler(commands=["encomendas"])
+    @bot.message_handler(commands=["encomendas","ENCOMENDAS"])
     def atualizarEncomendas(mensagem):
         resposta = f"Procurando encomendas";
         bot.reply_to(mensagem,resposta);
