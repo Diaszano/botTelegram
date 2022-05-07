@@ -21,7 +21,7 @@ TEMPO_MAXIMO = 5;
 def banco(db:DataBase=DataBase(),rastreador:Rastreio=Rastreio())->None:
     while True:
         if(db.validar_rastreio() >= TEMPO_MAXIMO):
-            dados = db.select_rastreio();
+            dados = db.atualiza_rastreio();
             if(dados != []):
                 id_user = dados[0];
                 codigo  = dados[1];
@@ -76,9 +76,14 @@ def app(db:DataBase=DataBase(),verificador:Verificadores=Verificadores(),rastrea
     
     @bot.message_handler(commands=["encomendas"])
     def atualizarEncomendas(mensagem):
-        resposta = f"Funcionalidade indisponível";
+        resposta = f"Procurando encomendas";
         bot.reply_to(mensagem,resposta);
-    
+        resposta = f"Tu tens {len(db.select_rastreio())} encomendas guardadas";
+        bot.reply_to(mensagem,resposta);
+        for dados, nome in db.select_rastreio():
+            resposta = f"{dados}Encomenda: {nome}";
+            bot.reply_to(mensagem,resposta);
+
     @bot.message_handler(commands=["cpf","CPF"])
     def cpf_funcao(mensagem):
         informacoes = str(mensagem.text);

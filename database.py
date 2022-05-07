@@ -229,8 +229,28 @@ class DataBase():
         finally:
             if Connection:
                 Connection.close();
-
+    
     def select_rastreio(self,comando:str=''):
+        if(comando == ''):
+            comando =   f'SELECT informacoes, nome_rastreio FROM encomenda ORDER BY id';
+        try:
+            self.conexao();
+            Connection = self.connection;
+            cursor = Connection.cursor();
+            cursor.execute(comando);
+            data = cursor.fetchall();
+            cursor.close();
+            return data;
+        except sqlite3.Error as error:
+            print("Falha do comando", error);
+            if Connection:
+                Connection.close();
+                return [];
+        finally:
+            if Connection:
+                Connection.close();
+    
+    def atualiza_rastreio(self,comando:str=''):
         if(comando == ''):
             comando =   f'SELECT id_user, codigo, informacoes, nome_rastreio FROM encomenda ORDER BY data LIMIT 1';
         try:
