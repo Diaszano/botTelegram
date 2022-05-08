@@ -71,18 +71,43 @@ def app(db:DataBase=DataBase(),verificador:Verificadores=Verificadores(),rastrea
                 tupla = (idUser,codigo,nome,dados);
                 db.insert_rastreio(comando_tuple=tupla);
                 return;
-        resposta = f"Infelizmente {nome} {codigo} não foi encontrada."
+            
+            resposta = f"Infelizmente {nome} {codigo} não foi encontrada."
+            tupla = (idUser,codigo,nome,resposta);
+            db.insert_rastreio(comando_tuple=tupla);
+        resposta = f"Dados Inválidos";
         bot.reply_to(mensagem,resposta);
     
     @bot.message_handler(commands=["encomendas","ENCOMENDAS"])
     def atualizarEncomendas(mensagem):
         resposta = f"Procurando encomendas";
         bot.reply_to(mensagem,resposta);
-        resposta = f"Tu tens {len(db.select_rastreio())} encomendas guardadas";
+        resposta = f"Tu tens 📦 {len(db.select_rastreio())} encomendas guardadas";
         bot.reply_to(mensagem,resposta);
         for dados, nome in db.select_rastreio():
             resposta = f"{dados}Encomenda: {nome}";
             bot.reply_to(mensagem,resposta);
+
+    @bot.message_handler(commands=["LISTAR","listar"])
+    def listarEncomendas(mensagem):
+        resposta = f"Procurando encomendas";
+        bot.reply_to(mensagem,resposta);
+        resposta = f"Tu tens {len(db.select_rastreio())} encomendas guardadas\n";
+        # bot.reply_to(mensagem,resposta);
+        for dados, nome in db.select_rastreio(comando=f'SELECT codigo, nome_rastreio FROM encomenda ORDER BY id'):
+            resposta += f"📦 {dados} {nome}\n";
+        bot.send_message(mensagem.chat.id,resposta);
+            # bot.reply_to(mensagem,resposta);
+
+    # @bot.message_handler(commands=["deletar","DELETAR"])
+    # def atualizarEncomendas(mensagem):
+    #     resposta = f"Procurando encomendas";
+    #     bot.reply_to(mensagem,resposta);
+    #     resposta = f"Tu tens {len(db.select_rastreio())} encomendas guardadas";
+    #     bot.reply_to(mensagem,resposta);
+    #     for dados, nome in db.select_rastreio():
+    #         resposta = f"{dados}Encomenda: {nome}";
+    #         bot.reply_to(mensagem,resposta);
 
     @bot.message_handler(commands=["cpf","CPF"])
     def cpf_funcao(mensagem):
@@ -137,7 +162,16 @@ def app(db:DataBase=DataBase(),verificador:Verificadores=Verificadores(),rastrea
 
     @bot.message_handler(func=verificar)
     def responder(mensagem):
-        texto = """Escolha uma opção para continuar:\nPara rastrear sua encomenda:\n\n/rastrear "código" - "Nome do Produto"\n\nPara ver suas encomendas guardadas:\n\n/encomendas\n\nPara verificar cpf ou cnpj:\n\n/cpf "o cpf da consulta"\n/cnpj "o cnpj da consulta"\n\nSe responder qualquer outra coisa não vai funcionar"""
+        texto = str("Escolha uma opção para continuar:" +
+                "\nPara rastrear sua encomenda:\n" +
+                '/rastrear "código" - "Nome do Produto"\n'+
+                '\nPara ver suas encomendas guardadas:\n'+
+                '/encomendas\n'+
+                '/listar\n\n'+
+                'Para verificar cpf ou cnpj:\n'+
+                '/cpf "o cpf da consulta"\n'+
+                '/cnpj "o cnpj da consulta"\n\n'+
+                'Se responder qualquer outra coisa não vai funcionar');
         bot.reply_to(mensagem, texto);
     bot.polling();
 #-----------------------
