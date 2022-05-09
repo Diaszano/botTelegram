@@ -35,12 +35,12 @@ def banco(db:DataBase=DataBase(),rastreador:Rastreio=Rastreio())->None:
                     bot.send_message(id_user,resposta);
         elif(db.validar_rastreio() == 0):
             tempo = TEMPO_MAXIMO * 60;
-            print(f"Tempo de espera = {tempo/60}");
+            # print(f"Tempo de espera = {tempo/60}");
             time.sleep(tempo);
         else:
             tempo = TEMPO_MAXIMO * 60;
             tempo_de_espera = tempo - (db.validar_rastreio() * 60);
-            print(f"Tempo de espera = {tempo_de_espera/60}");
+            # print(f"Tempo de espera = {tempo_de_espera/60}");
             time.sleep(tempo_de_espera);
 
 def app(db:DataBase=DataBase(),verificador:Verificadores=Verificadores(),rastreador:Rastreio=Rastreio())->None:
