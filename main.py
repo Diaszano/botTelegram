@@ -100,7 +100,8 @@ def app(db:DataBase=DataBase(),verificador:Verificadores=Verificadores(),rastrea
         bot.reply_to(mensagem,resposta);
         id_user   = mensagem.chat.id;
         resposta = f"Tu tens {len(db.select_rastreio(id_user=id_user))} encomendas guardadas\n";
-        for informacoes, nome in db.select_rastreio(comando=f'SELECT codigo, nome_rastreio FROM encomenda ORDER BY id',id_user=id_user):
+        comando = f"SELECT codigo, nome_rastreio FROM encomenda WHERE id_user='{id_user}' ORDER BY id";
+        for informacoes, nome in db.select_rastreio(comando=comando):
             resposta += f"📦 {informacoes} {nome}\n";
         bot.send_message(mensagem.chat.id,resposta);
 
