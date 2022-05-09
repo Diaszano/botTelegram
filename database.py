@@ -256,9 +256,9 @@ class DataBase():
             if Connection:
                 Connection.close();
 
-    def select_rastreio(self,comando:str=''):
+    def select_rastreio(self,comando:str='',id_user:str=''):
         if(comando == ''):
-            comando =   f'SELECT informacoes, nome_rastreio FROM encomenda ORDER BY id';
+            comando =   f"SELECT informacoes, nome_rastreio FROM encomenda  WHERE id_user='{id_user}' ORDER BY id";
         try:
             self.conexao();
             Connection = self.connection;

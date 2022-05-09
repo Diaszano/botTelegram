@@ -87,9 +87,10 @@ def app(db:DataBase=DataBase(),verificador:Verificadores=Verificadores(),rastrea
     def atualizar_encomendas(mensagem):
         resposta = f"Procurando encomendas";
         bot.reply_to(mensagem,resposta);
-        resposta = f"Tu tens 📦 {len(db.select_rastreio())} encomendas guardadas";
+        id_user   = mensagem.chat.id;
+        resposta = f"Tu tens 📦 {len(db.select_rastreio(id_user=id_user))} encomendas guardadas";
         bot.reply_to(mensagem,resposta);
-        for informacoes, nome in db.select_rastreio():
+        for informacoes, nome in db.select_rastreio(id_user=id_user):
             resposta = f"{informacoes}Encomenda: {nome}";
             bot.reply_to(mensagem,resposta);
 
@@ -97,8 +98,9 @@ def app(db:DataBase=DataBase(),verificador:Verificadores=Verificadores(),rastrea
     def listar_encomendas(mensagem):
         resposta = f"Procurando encomendas";
         bot.reply_to(mensagem,resposta);
-        resposta = f"Tu tens {len(db.select_rastreio())} encomendas guardadas\n";
-        for informacoes, nome in db.select_rastreio(comando=f'SELECT codigo, nome_rastreio FROM encomenda ORDER BY id'):
+        id_user   = mensagem.chat.id;
+        resposta = f"Tu tens {len(db.select_rastreio(id_user=id_user))} encomendas guardadas\n";
+        for informacoes, nome in db.select_rastreio(comando=f'SELECT codigo, nome_rastreio FROM encomenda ORDER BY id',id_user=id_user):
             resposta += f"📦 {informacoes} {nome}\n";
         bot.send_message(mensagem.chat.id,resposta);
 
