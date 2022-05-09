@@ -83,23 +83,23 @@ class DataBase():
                         """;
         self.creat_table(comando=comando);
     
-    def insert_cpf(self,comando:str='',comando_tuple=[]) -> None:
+    def insert_cpf(self,comando:str='',tupla=[]) -> None:
         if(comando == ''):
             comando =   """ 
                             INSERT INTO cpf
                             (id_user, CPF, status, dia)
                             VALUES(?, ?, ?,(SELECT DATETIME('now','localtime')))
                         """;
-        if(comando_tuple == []):
-            comando_tuple = ('id_user', 'CPF', 'status', 'dia');
+        if(tupla == []):
+            tupla = ('id_user', 'CPF', 'status', 'dia');
             return;
-        if(self.verifica_cpf(id_user=comando_tuple[0],CPF=comando_tuple[1])):
+        if(self.verifica_cpf(id_user=tupla[0],CPF=tupla[1])):
             return;
         try:
             self.conexao();
             Connection = self.connection;
             cursor = Connection.cursor();
-            cursor.execute(comando, comando_tuple);
+            cursor.execute(comando, tupla);
             Connection.commit();
             cursor.close();
         except sqlite3.Error as error:
@@ -150,19 +150,19 @@ class DataBase():
                         """;
         self.creat_table(comando=comando);
     
-    def insert_cnpj(self,comando:str='',comando_tuple=[]) -> None:
+    def insert_cnpj(self,comando:str='',tupla=[]) -> None:
         if(comando == ''):
             comando =   """ 
                             INSERT INTO cnpj
                             (id_user, CNPJ, status, dia)
                             VALUES(?, ?, ?,(SELECT DATETIME('now','localtime')))
                         """;
-        if(comando_tuple == []):
-            comando_tuple = ('id_user', 'CNPJ', 'status', 'dia');
+        if(tupla == []):
+            tupla = ('id_user', 'CNPJ', 'status', 'dia');
             return;
-        if(self.verifica_cnpj(id_user=comando_tuple[0],CNPJ=comando_tuple[1])):
+        if(self.verifica_cnpj(id_user=tupla[0],CNPJ=tupla[1])):
             return;
-        self.insert_cpf(comando=comando,comando_tuple=comando_tuple);
+        self.insert_cpf(comando=comando,tupla=tupla);
 
     def verifica_cnpj(self,comando:str='',id_user:str='',CNPJ:str='')->bool:
         if(id_user == '' or CNPJ == ''):
@@ -207,22 +207,22 @@ class DataBase():
             if Connection:
                 Connection.close();
     
-    def insert_rastreio(self,comando:str='',comando_tuple=[]) -> None:
+    def insert_rastreio(self,comando:str='',tupla=[]) -> None:
         if(comando == ''):
             comando =   """ 
                             INSERT INTO encomenda
                             (id_user, codigo, nome_rastreio, 'data', informacoes)
                             VALUES(?, ?, ?,(SELECT DATETIME('now','localtime')), ?)
                         """;
-        if(comando_tuple == []):
-            comando_tuple = ('id_user','codigo','nome_rastreio','data','informacoes');
-        if(self.verifica_rastreio(id_user=comando_tuple[0],codigo=comando_tuple[1])):
+        if(tupla == []):
+            tupla = ('id_user','codigo','nome_rastreio','data','informacoes');
+        if(self.verifica_rastreio(id_user=tupla[0],codigo=tupla[1])):
             return;
         try:
             self.conexao();
             Connection = self.connection;
             cursor = Connection.cursor();
-            cursor.execute(comando, comando_tuple);
+            cursor.execute(comando, tupla);
             Connection.commit();
             cursor.close();
         except sqlite3.Error as error:
@@ -262,7 +262,7 @@ class DataBase():
         try:
             self.conexao();
             Connection = self.connection;
-            cursor = Connection.cursor();
+            cursor     = Connection.cursor();
             cursor.execute(comando);
             data = cursor.fetchall();
             cursor.close();
@@ -282,7 +282,7 @@ class DataBase():
         try:
             self.conexao();
             Connection = self.connection;
-            cursor = Connection.cursor();
+            cursor     = Connection.cursor();
             cursor.execute(comando);
             data = cursor.fetchall();
             if data != []:
@@ -309,7 +309,7 @@ class DataBase():
         try:
             self.conexao();
             Connection = self.connection;
-            cursor = Connection.cursor();
+            cursor     = Connection.cursor();
             cursor.execute(comando);
             data = cursor.fetchall();
             if data != []:
@@ -328,17 +328,17 @@ class DataBase():
             if Connection:
                 Connection.close();
     
-    def update_rastreio(self,id_user:str='',codigo:str='',comando:str='',mensagem:str='') -> bool:
+    def update_rastreio(self,id_user:str='',codigo:str='',comando:str='',informacoes:str='') -> bool:
         if(comando == ''):
             comando =   f""" UPDATE encomenda
                             SET 'data'=(SELECT DATETIME('now','localtime')), 
-                            informacoes='{mensagem}'
+                            informacoes='{informacoes}'
                             WHERE id_user='{id_user}' AND codigo='{codigo}'
                         """;
         try:
             self.conexao();
             Connection = self.connection;
-            cursor = Connection.cursor();
+            cursor     = Connection.cursor();
             cursor.execute(comando);
             Connection.commit();
             cursor.close();
