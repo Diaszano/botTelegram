@@ -30,7 +30,7 @@ def banco(db:DataBase=DataBase(),rastreador:Rastreio=Rastreio())->None:
                 novo_info = rastreador.rastrear(codigo=codigo);
                 db.update_rastreio(id_user=id_user,codigo=codigo,mensagem=novo_info);
                 if(info != novo_info):
-                    resposta = f"Temos atualizações da sua encomenda {nome}\n\n{novo_info}Encomenda: {nome}";
+                    resposta = f"Temos atualizações da sua encomenda 📦 {nome}\n\n{novo_info}Encomenda: {nome}";
                     bot = telebot.TeleBot(senhas.CHAVE_API);
                     bot.send_message(id_user,resposta);
         elif(db.validar_rastreio() == 0):
@@ -51,7 +51,9 @@ def app(db:DataBase=DataBase(),verificador:Verificadores=Verificadores(),rastrea
         if(informacoes != []):
             informacoes = informacoes[0];
             if(len(informacoes) != 2):
-                if(re.findallr(r'(?P<Codigo>[a-z]{2}[0-9]{9}[a-z]{2})(?:\n)*',informacoes,re.MULTILINE | re.IGNORECASE) == []):
+                if(re.findall(r'(?P<Codigo>[a-z]{2}[0-9]{9}[a-z]{2})(?:\n)*',informacoes,re.MULTILINE | re.IGNORECASE) == []):
+                    resposta = f"Dados Inválidos";
+                    bot.reply_to(mensagem,resposta);
                     return;
                 else:
                     codigo   = informacoes[0];
@@ -71,10 +73,11 @@ def app(db:DataBase=DataBase(),verificador:Verificadores=Verificadores(),rastrea
                 tupla = (idUser,codigo,nome,dados);
                 db.insert_rastreio(comando_tuple=tupla);
                 return;
-            
             resposta = f"Infelizmente {nome} {codigo} não foi encontrada."
-            tupla = (idUser,codigo,nome,resposta);
+            bot.reply_to(mensagem,resposta);
+            tupla = (idUser,codigo,nome,dados);
             db.insert_rastreio(comando_tuple=tupla);
+            return;
         resposta = f"Dados Inválidos";
         bot.reply_to(mensagem,resposta);
     
@@ -93,21 +96,28 @@ def app(db:DataBase=DataBase(),verificador:Verificadores=Verificadores(),rastrea
         resposta = f"Procurando encomendas";
         bot.reply_to(mensagem,resposta);
         resposta = f"Tu tens {len(db.select_rastreio())} encomendas guardadas\n";
-        # bot.reply_to(mensagem,resposta);
         for dados, nome in db.select_rastreio(comando=f'SELECT codigo, nome_rastreio FROM encomenda ORDER BY id'):
             resposta += f"📦 {dados} {nome}\n";
         bot.send_message(mensagem.chat.id,resposta);
-            # bot.reply_to(mensagem,resposta);
 
-    # @bot.message_handler(commands=["deletar","DELETAR"])
-    # def atualizarEncomendas(mensagem):
-    #     resposta = f"Procurando encomendas";
-    #     bot.reply_to(mensagem,resposta);
-    #     resposta = f"Tu tens {len(db.select_rastreio())} encomendas guardadas";
-    #     bot.reply_to(mensagem,resposta);
-    #     for dados, nome in db.select_rastreio():
-    #         resposta = f"{dados}Encomenda: {nome}";
-    #         bot.reply_to(mensagem,resposta);
+    @bot.message_handler(commands=["deletar","DELETAR"])
+    def deletarEncomendas(mensagem):
+        informacoes = mensagem.text;
+        informacoes = re.findall(   r'(?P<Codigo>[a-z]{2}[0-9]{9}[a-z]{2})'
+                                    ,informacoes,re.MULTILINE | re.IGNORECASE);
+        if(informacoes != []):
+            informacoes = informacoes[0];
+            codigo   = str(informacoes).upper();
+            idUser   = mensagem.chat.id;
+            resposta = f"Procurando encomenda para remover";
+            bot.reply_to(mensagem,resposta);
+            if(db.verifica_rastreio(id_user=idUser,codigo=codigo)):
+                db.delete_rastreio(id_user=idUser,codigo=codigo);
+                resposta = f"Encomenda Deletada";
+                bot.reply_to(mensagem,resposta);
+                return;
+        resposta = f"Dados Inválidos";
+        bot.reply_to(mensagem,resposta);
 
     @bot.message_handler(commands=["cpf","CPF"])
     def cpf_funcao(mensagem):
@@ -167,7 +177,11 @@ def app(db:DataBase=DataBase(),verificador:Verificadores=Verificadores(),rastrea
                 '/rastrear "código" - "Nome do Produto"\n'+
                 '\nPara ver suas encomendas guardadas:\n'+
                 '/encomendas\n'+
-                '/listar\n\n'+
+                '   Com esse tu vê todas as informações\n'+
+                '/listar\n'+
+                '   Com esse tu vê só o codigo de rastreio e o nome\n\n'+
+                'Para deletar uma encomenda guardada:\n'+
+                '/deletar "código"\n\n'+
                 'Para verificar cpf ou cnpj:\n'+
                 '/cpf "o cpf da consulta"\n'+
                 '/cnpj "o cnpj da consulta"\n\n'+

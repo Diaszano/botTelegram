@@ -183,14 +183,17 @@ class DataBase():
             comando =   f""" 
                             SELECT *
                             FROM encomenda
-                            WHERE id_user='{id_user}' AND codigo='{codigo}'
+                            WHERE id_user='{id_user}' 
+                            AND
+                            codigo='{codigo}'
                         """;
         try:
             self.conexao();
             Connection = self.connection;
             cursor = Connection.cursor();
             cursor.execute(comando);
-            if cursor.fetchall() != []:
+            tmp = cursor.fetchall();
+            if tmp != []:
                 cursor.close();
                 return True;
             cursor.close();
@@ -230,6 +233,29 @@ class DataBase():
             if Connection:
                 Connection.close();
     
+    def delete_rastreio(self,comando:str='',id_user:str='',codigo:str='') -> None:
+        if(id_user == '' or codigo == ''):
+            return;
+        if(comando == ''):
+            comando =   f""" 
+                            DELETE FROM encomenda
+                            WHERE id_user='{id_user}' AND codigo='{codigo}'
+                        """;
+        try:
+            self.conexao();
+            Connection = self.connection;
+            cursor = Connection.cursor();
+            cursor.execute(comando);
+            Connection.commit();
+            cursor.close();
+        except sqlite3.Error as error:
+            print("Falha do comando", error);
+            if Connection:
+                Connection.close();
+        finally:
+            if Connection:
+                Connection.close();
+
     def select_rastreio(self,comando:str=''):
         if(comando == ''):
             comando =   f'SELECT informacoes, nome_rastreio FROM encomenda ORDER BY id';
