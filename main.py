@@ -20,28 +20,26 @@ TEMPO_MAXIMO = 5;
 # 
 def banco(db:DataBase=DataBase(),rastreador:Rastreio=Rastreio())->None:
     while True:
-        if(db.validar_rastreio() >= TEMPO_MAXIMO):
+        tempo_banco = db.validar_rastreio();
+        if((tempo_banco) == -1):
+            tempo           = TEMPO_MAXIMO * 60;
+            tempo_de_espera = tempo;
+            if tempo_de_espera > 0:
+                # print(f"Tempo de espera = {tempo_de_espera/60}");
+                time.sleep(tempo_de_espera);
+        elif((tempo_banco/60) >= TEMPO_MAXIMO):
             dados = db.atualiza_rastreio();
             if(dados != []):
                 id_user = dados[0];
                 codigo  = dados[1];
-                info    = dados[2];
-                nome    = dados[3];
                 informacoes = rastreador.rastrear(codigo=codigo);
                 db.update_rastreio(id_user=id_user,codigo=codigo,informacoes=informacoes);
-                if(info != informacoes):
-                    resposta = f"Temos atualizações da sua encomenda 📦 {nome}\n\n{informacoes}Encomenda: {nome}";
-                    bot = telebot.TeleBot(senhas.CHAVE_API);
-                    bot.send_message(id_user,resposta);
-        elif(db.validar_rastreio() == 0):
-            tempo = TEMPO_MAXIMO * 60;
-            # print(f"Tempo de espera = {tempo/60}");
-            time.sleep(tempo);
         else:
-            tempo = TEMPO_MAXIMO * 60;
-            tempo_de_espera = tempo - (db.validar_rastreio() * 60);
-            # print(f"Tempo de espera = {tempo_de_espera/60}");
-            time.sleep(tempo_de_espera);
+            tempo           = TEMPO_MAXIMO * 60;
+            tempo_de_espera = tempo - tempo_banco;
+            if tempo_de_espera > 0:
+                # print(f"Tempo de espera = {tempo_de_espera/60}");
+                time.sleep(tempo_de_espera);
 
 def app(db:DataBase=DataBase(),verificador:Verificadores=Verificadores(),rastreador:Rastreio=Rastreio())->None:
     bot = telebot.TeleBot(senhas.CHAVE_API);
