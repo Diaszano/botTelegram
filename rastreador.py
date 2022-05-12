@@ -29,7 +29,7 @@ class Rastreio:
         return '';
     
     def limparMensagem(self,eventos:list = []) -> list:
-        rastreio = '';
+        rastreio = [];
         for resultado in eventos:
             dia       = '';
             tipo      = '';
@@ -75,8 +75,12 @@ class Rastreio:
                     uf          = uf.replace('"','');
                     cidade      = cidade.replace('"','');
                     destino     = f' para [{cidade}/{uf}]';
-            rastreio += f'[{self.limpaData(dia)}] - {descricao} {local}{destino}{detalhe}\n\n\n';
-        return rastreio;
+            rastreio.append(f'[{self.limpaData(dia)}] - {descricao} {local}{destino}{detalhe}\n\n\n');
+        rastreio_str = '';
+        tamanho_rastreio = len(rastreio)-1;
+        for i in range(tamanho_rastreio+1):
+            rastreio_str += rastreio[tamanho_rastreio - i];
+        return rastreio_str;
 
     def limpaData(self,data:str='')->str:
         ano      = data[:4];
