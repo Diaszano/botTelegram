@@ -12,7 +12,7 @@ from verificadores import Verificadores
 #-----------------------
 # CONSTANTES
 #-----------------------
-TEMPO_MAXIMO = 1;
+TEMPO_MAXIMO = 5;
 #-----------------------
 # FUNÇÕES()
 #-----------------------
@@ -37,13 +37,12 @@ def banco(db:DataBase=DataBase(),rastreador:Rastreio=Rastreio(),bot:telebot.Tele
                 nova_informacoes = rastreador.rastrear(codigo=codigo);
                 db.update_rastreio(id_user=id_user,codigo=codigo,informacoes=nova_informacoes);
                 if(informacoes != nova_informacoes):
-                    resposta = f"Temos atualizações da sua encomenda {nome}\n\n{nova_informacoes}Encomenda: {nome}";
+                    resposta = f"Temos atualizações da sua encomenda \n\n{nova_informacoes}Encomenda: {nome}";
                     bot.send_message(id_user,resposta);
         else:
             tempo           = TEMPO_MAXIMO * 60;
             tempo_de_espera = tempo - tempo_banco;
             if tempo_de_espera > 0:
-                # print(f"Tempo de espera = {tempo_de_espera/60}");
                 time.sleep(tempo_de_espera);
 
 def app(db:DataBase=DataBase(),verificador:Verificadores=Verificadores(),rastreador:Rastreio=Rastreio(),bot:telebot.TeleBot = telebot.TeleBot(senhas.CHAVE_API))->None:
@@ -66,8 +65,9 @@ def app(db:DataBase=DataBase(),verificador:Verificadores=Verificadores(),rastrea
             else:
                 codigo   = dados[0];
                 nome     = dados[1];
-            codigo = str(codigo).upper();
-            id_user   = mensagem.chat.id;
+
+            codigo   = str(codigo).upper();
+            id_user  = mensagem.chat.id;
             resposta = f"Procurando encomenda";
             bot.reply_to(mensagem,resposta);
             informacoes = rastreador.rastrear(codigo=codigo); # ----
@@ -90,7 +90,7 @@ def app(db:DataBase=DataBase(),verificador:Verificadores=Verificadores(),rastrea
     def atualizar_encomendas(mensagem):
         resposta = f"Procurando encomendas";
         bot.reply_to(mensagem,resposta);
-        id_user   = mensagem.chat.id;
+        id_user  = mensagem.chat.id;
         resposta = f"Tu tens 📦 {len(db.select_rastreio(id_user=id_user))} encomendas guardadas";
         bot.reply_to(mensagem,resposta);
         for informacoes, nome in db.select_rastreio(id_user=id_user):
@@ -101,9 +101,9 @@ def app(db:DataBase=DataBase(),verificador:Verificadores=Verificadores(),rastrea
     def listar_encomendas(mensagem):
         resposta = f"Procurando encomendas";
         bot.reply_to(mensagem,resposta);
-        id_user   = mensagem.chat.id;
+        id_user  = mensagem.chat.id;
         resposta = f"Tu tens {len(db.select_rastreio(id_user=id_user))} encomendas guardadas\n";
-        comando = f"SELECT codigo, nome_rastreio FROM encomenda WHERE id_user='{id_user}' ORDER BY id";
+        comando  = f"SELECT codigo, nome_rastreio FROM encomenda WHERE id_user='{id_user}' ORDER BY id";
         for informacoes, nome in db.select_rastreio(comando=comando):
             resposta += f"📦 {informacoes} {nome}\n";
         bot.send_message(mensagem.chat.id,resposta);
@@ -114,9 +114,9 @@ def app(db:DataBase=DataBase(),verificador:Verificadores=Verificadores(),rastrea
         dados = re.findall(   r'(?P<Codigo>[a-z]{2}[0-9]{9}[a-z]{2})'
                                     ,dados,re.MULTILINE | re.IGNORECASE);
         if(dados != []):
-            dados = dados[0];
+            dados    = dados[0];
             codigo   = str(dados).upper();
-            id_user   = mensagem.chat.id;
+            id_user  = mensagem.chat.id;
             resposta = f"Procurando encomenda para remover";
             bot.reply_to(mensagem,resposta);
             if(db.verifica_rastreio(id_user=id_user,codigo=codigo)):
@@ -153,10 +153,10 @@ def app(db:DataBase=DataBase(),verificador:Verificadores=Verificadores(),rastrea
     
     @bot.message_handler(commands=["cnpj","CNPJ"])
     def cnpj_funcao(mensagem):
-        dados = str(mensagem.text);
-        dados = dados.replace('.','').replace('-','').replace('/','');
-        id_user   = mensagem.chat.id;
-        dados = re.findall(   r'(?P<CNPJ_sem_pontos>[0-9]{14})(?:\n)*'
+        dados   = str(mensagem.text);
+        dados   = dados.replace('.','').replace('-','').replace('/','');
+        id_user = mensagem.chat.id;
+        dados   = re.findall(   r'(?P<CNPJ_sem_pontos>[0-9]{14})(?:\n)*'
                                     ,dados,re.MULTILINE | re.IGNORECASE);
         if(dados != []):
             cnpj    = dados[0];

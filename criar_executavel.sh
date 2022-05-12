@@ -6,4 +6,4 @@ cp ./linuxdist/* ./
 rm -r ./temporario/
 rm -r ./linuxdist/
 clear
-echo "Cridado o executavel"
+echo "Cridado o executavel bot_telegram.dzn"

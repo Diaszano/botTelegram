@@ -1,3 +1,4 @@
+# Inutilizado, mas vou deixar aqui vá que eu use um dia
 codigos = [ [{'codigo':'BDE'},{'tipo':'1' },{'mensagem':'Objeto entregue ao destinatário'}],
             [{'codigo':'BDE'},{'tipo':'2' },{'mensagem':'Carteiro não atendido - Entrega não realizada'}],
             [{'codigo':'BDE'},{'tipo':'3' },{'mensagem':'Remetente não retirou objeto na Unidade dos Correios'},{'extra':'Objeto em análise de destinação'}],

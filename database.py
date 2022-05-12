@@ -28,14 +28,8 @@ class DataBase():
     # -----------------------
     def conexao(self) -> None:
         self.connection = sqlite3.connect(self.nome);
-    
-    def desconexao(self) -> None:
-        try:
-            self.connection.close();
-        except:
-            pass;
 
-    def dif_minutos(self,date1)->float:
+    def dif_minutos(self,date1) -> float:
         data_agora = datetime.now();
         date2      = data_agora.strftime('%Y-%m-%d %H:%M:%S');
         d1         = datetime.strptime(date1, '%Y-%m-%d %H:%M:%S');
@@ -110,7 +104,7 @@ class DataBase():
             if Connection:
                 Connection.close();
 
-    def verifica_cpf(self,comando:str='',id_user:str='',CPF:str='')->bool:
+    def verifica_cpf(self,comando:str='',id_user:str='',CPF:str='') -> bool:
         if(id_user == '' or CPF == ''):
             return False;
         if(comando == ''):
@@ -164,7 +158,7 @@ class DataBase():
             return;
         self.insert_cpf(comando=comando,tupla=tupla);
 
-    def verifica_cnpj(self,comando:str='',id_user:str='',CNPJ:str='')->bool:
+    def verifica_cnpj(self,comando:str='',id_user:str='',CNPJ:str='') -> bool:
         if(id_user == '' or CNPJ == ''):
             return False;
         if(comando == ''):
@@ -176,7 +170,7 @@ class DataBase():
     # -----------------------    
     # RASTREIO
     # -----------------------
-    def verifica_rastreio(self,comando:str='',id_user:str='',codigo:str='')->bool:
+    def verifica_rastreio(self,comando:str='',id_user:str='',codigo:str='') -> bool:
         if(id_user == '' or codigo == ''):
             return False;
         if(comando == ''):
@@ -256,7 +250,7 @@ class DataBase():
             if Connection:
                 Connection.close();
 
-    def select_rastreio(self,comando:str='',id_user:str=''):
+    def select_rastreio(self,comando:str='',id_user:str='') -> list:
         if(comando == ''):
             comando =   f"SELECT informacoes, nome_rastreio FROM encomenda  WHERE id_user='{id_user}' ORDER BY id";
         try:
@@ -276,7 +270,7 @@ class DataBase():
             if Connection:
                 Connection.close();
     
-    def atualiza_rastreio(self,comando:str=''):
+    def atualiza_rastreio(self,comando:str='') -> list:
         if(comando == ''):
             comando =   f'SELECT id_user, codigo, informacoes, nome_rastreio FROM encomenda ORDER BY data LIMIT 1';
         try:
@@ -303,7 +297,7 @@ class DataBase():
             if Connection:
                 Connection.close();
 
-    def validar_rastreio(self,comando:str='')->float:
+    def validar_rastreio(self,comando:str='') -> float:
         if(comando == ''):
             comando =   f'SELECT data FROM encomenda ORDER BY data LIMIT 1';
         try:

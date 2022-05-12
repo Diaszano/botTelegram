@@ -18,4 +18,4 @@
 
 ### Como acessar o bot?
 
-#### Bastas pesquisar no telegram diaszanoBot e iniciar.
+#### Bastas pesquisar no telegram **Diaszano Tools** e iniciar

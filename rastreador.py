@@ -29,7 +29,16 @@ class Rastreio:
         return '';
     
     def limparMensagem(self,eventos:list = []) -> list:
-        rastreio = [];
+        rastreio          = [];
+
+        re_data           = re.compile(r'((\"dtHrCriado\"\:)(\".*?\"))', re.MULTILINE | re.IGNORECASE);
+        re_tipo           = re.compile(r'((\"tipo\"\:)(\"[^0-9]*?\"))', re.MULTILINE | re.IGNORECASE);
+        re_detalhe        = re.compile(r'((\"detalhe\"\:)(\".*?\"))', re.MULTILINE | re.IGNORECASE);
+        re_descricao      = re.compile(r'((\"descricao\"\:)(\".*?\"))', re.MULTILINE | re.IGNORECASE);
+        re_unidade_1      = re.compile(r'(?:\"unidade\"\:\{\"endereco\"\:\{"cidade"\:)(\".*?\"),(?:\"uf\"\:)(\".*?\")', re.MULTILINE | re.IGNORECASE);
+        re_unidade_2      = re.compile(r'(?:\"unidade\"\:\{\"codSro\"\:\".*?\"(?:\,)\"endereco\"\:\{\}\,\"nome"\:)(\".*?\")', re.MULTILINE | re.IGNORECASE);
+        re_unidadeDestino = re.compile(r'(?:\"unidadeDestino\"\:\{\"endereco\"\:\{\"cidade\":)(\".*?\")(?:,\"uf\"\:)(\".*?\")', re.MULTILINE | re.IGNORECASE);
+        
         for resultado in eventos:
             dia       = '';
             tipo      = '';
@@ -38,24 +47,24 @@ class Rastreio:
             detalhe   = '';
             descricao = '';
             if 'descricao' in resultado:
-                temp      = re.findall('((\"descricao\"\:)(\".*?\"))', resultado, re.MULTILINE | re.IGNORECASE);
+                temp      = re_descricao.findall(resultado);
                 temp      = str(temp[0][2]);
                 temp      = temp.replace('"','');
                 descricao = temp;
             if 'detalhe' in resultado:
-                temp    = re.findall('((\"detalhe\"\:)(\".*?\"))', resultado, re.MULTILINE | re.IGNORECASE);
+                temp    = re_detalhe.findall(resultado);
                 temp    = temp[0][2];
                 temp    = temp.replace('"','');
                 detalhe = f'\n{temp}';
             if 'dtHrCriado' in resultado:
-                temp = re.findall('((\"dtHrCriado\"\:)(\".*?\"))', resultado, re.MULTILINE | re.IGNORECASE);
+                temp = re_data.findall(resultado);
                 temp = temp[0][2]
                 temp = temp.replace('"','');
                 dia  = temp;
             if 'tipo' in resultado:
-                tipo = re.findall('((\"tipo\"\:)(\"[^0-9]*?\"))', resultado, re.MULTILINE | re.IGNORECASE);
+                tipo = re_tipo.findall(resultado);
                 if tipo != []:
-                    temp = re.findall('(?:\"unidade\"\:\{\"endereco\"\:\{"cidade"\:)(\".*?\"),(?:\"uf\"\:)(\".*?\")', resultado, re.MULTILINE | re.IGNORECASE);
+                    temp = re_unidade_1.findall(resultado);
                     if temp != []:
                         temp        = temp[0];
                         [cidade,uf] = [temp[0],temp[1]];
@@ -63,12 +72,12 @@ class Rastreio:
                         cidade      = cidade.replace('"','');
                         local       = f'[{cidade}/{uf}]';
                     else:
-                        temp  = re.findall('(?:\"unidade\"\:\{\"codSro\"\:\".*?\"(?:\,)\"endereco\"\:\{\}\,\"nome"\:)(\".*?\")', resultado, re.MULTILINE | re.IGNORECASE);
+                        temp  = re_unidade_2.findall(resultado);
                         if temp != []:
                             temp  = temp[0].replace('"','');
                             local = f'[{temp}]';
-            if '' in resultado:
-                temp  = re.findall('(?:\"unidadeDestino\"\:\{\"endereco\"\:\{\"cidade\":)(\".*?\")(?:,\"uf\"\:)(\".*?\")', resultado, re.MULTILINE | re.IGNORECASE);
+            if 'unidadeDestino' in resultado:
+                temp  = re_unidadeDestino.findall(resultado);
                 if temp != []:
                     temp        = temp[0];
                     [cidade,uf] = [temp[0],temp[1]];
