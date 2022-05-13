@@ -32,11 +32,11 @@ def banco(db:DataBase=DataBase(),rastreador:Rastreio=Rastreio(),bot:telebot.Tele
             if(dados != []):
                 id_user          = dados[0];
                 codigo           = dados[1];
-                informacoes      = dados[2];
+                informacoes      = str(dados[2]);
                 nome             = dados[3];
                 nova_informacoes = rastreador.rastrear(codigo=codigo);
-                db.update_rastreio(id_user=id_user,codigo=codigo,informacoes=nova_informacoes);
-                if(informacoes != nova_informacoes):
+                if((informacoes.upper() != nova_informacoes.upper()) and (nova_informacoes != "")):
+                    db.update_rastreio(id_user=id_user,codigo=codigo,informacoes=nova_informacoes);
                     resposta = f"Temos atualizações da sua encomenda \n\n{nova_informacoes}Encomenda: {nome}";
                     bot.send_message(id_user,resposta);
         else:
