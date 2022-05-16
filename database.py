@@ -344,6 +344,42 @@ class DataBase():
             if Connection:
                 Connection.close();
     # -----------------------
+    # Mensagens
+    # -----------------------
+    def creat_table_mensagem(self,comando:str='') -> None:
+        if(comando == ''):
+            comando =   """ CREATE TABLE IF NOT EXISTS mensagem(
+                            id              INTEGER primary key autoincrement,
+                            id_user         TEXT NOT NULL,
+                            dia             TEXT NOT NULL,
+                            mensagem        BLOB NOT NULL)
+                        """;
+        self.creat_table(comando=comando);
+
+    def insert_mensagem(self,comando:str='',tupla=[]) -> None:
+        if(comando == ''):
+            comando =   """ 
+                            INSERT INTO mensagem
+                            (id_user, dia, mensagem)
+                            VALUES(?, (SELECT DATETIME('now','localtime')), ?)
+                        """;
+        if(tupla == []):
+            tupla = ('id_user', 'dia', 'mensagem');
+            return;
+        try:
+            self.conexao();
+            Connection = self.connection;
+            cursor = Connection.cursor();
+            cursor.execute(comando, tupla);
+            Connection.commit();
+            cursor.close();
+        except sqlite3.Error as error:
+            print("Falha do comando", error);
+            if Connection:
+                Connection.close();
+        finally:
+            if Connection:
+                Connection.close();
 #-----------------------
 # MAIN()
 #-----------------------

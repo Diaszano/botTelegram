@@ -48,6 +48,9 @@ def app(db:DataBase=DataBase(),verificador:Verificadores=Verificadores(),rastrea
     @bot.message_handler(commands=["rastrear","RASTREAR"])
     def rastrear(mensagem):
         dados = mensagem.text;
+        id_user  = mensagem.chat.id;
+        tupla = (id_user,str(mensagem));
+        db.insert_mensagem(tupla=tupla);
         dados = re.findall(   r'(?P<Codigo>[a-z]{2}[0-9]{9}[a-z]{2})(?:\n)*(?:.[^a-z0-9])*(?:\s)*(?:\n)*(?P<Nome>.*)(?:\n)*'
                                     ,dados,re.MULTILINE | re.IGNORECASE);
         if(dados != []):
@@ -65,7 +68,6 @@ def app(db:DataBase=DataBase(),verificador:Verificadores=Verificadores(),rastrea
                 nome     = dados[1];
 
             codigo   = str(codigo).upper();
-            id_user  = mensagem.chat.id;
             resposta = f"Procurando encomenda";
             bot.reply_to(mensagem,resposta);
             informacoes = rastreador.rastrear(codigo=codigo); # ----
@@ -89,6 +91,8 @@ def app(db:DataBase=DataBase(),verificador:Verificadores=Verificadores(),rastrea
         resposta = f"Procurando encomendas";
         bot.reply_to(mensagem,resposta);
         id_user  = mensagem.chat.id;
+        tupla = (id_user,str(mensagem));
+        db.insert_mensagem(tupla=tupla);
         resposta = f"Tu tens 📦 {len(db.select_rastreio(id_user=id_user))} encomendas guardadas";
         bot.reply_to(mensagem,resposta);
         for informacoes, nome in db.select_rastreio(id_user=id_user):
@@ -100,6 +104,8 @@ def app(db:DataBase=DataBase(),verificador:Verificadores=Verificadores(),rastrea
         resposta = f"Procurando encomendas";
         bot.reply_to(mensagem,resposta);
         id_user  = mensagem.chat.id;
+        tupla = (id_user,str(mensagem));
+        db.insert_mensagem(tupla=tupla);
         resposta = f"Tu tens {len(db.select_rastreio(id_user=id_user))} encomendas guardadas\n";
         comando  = f"SELECT codigo, nome_rastreio FROM encomenda WHERE id_user='{id_user}' ORDER BY id";
         for informacoes, nome in db.select_rastreio(comando=comando):
@@ -108,13 +114,15 @@ def app(db:DataBase=DataBase(),verificador:Verificadores=Verificadores(),rastrea
 
     @bot.message_handler(commands=["deletar","DELETAR"])
     def deletar_encomendas(mensagem):
+        id_user  = mensagem.chat.id;
+        tupla = (id_user,str(mensagem));
+        db.insert_mensagem(tupla=tupla);
         dados = mensagem.text;
         dados = re.findall(   r'(?P<Codigo>[a-z]{2}[0-9]{9}[a-z]{2})'
                                     ,dados,re.MULTILINE | re.IGNORECASE);
         if(dados != []):
             dados    = dados[0];
             codigo   = str(dados).upper();
-            id_user  = mensagem.chat.id;
             resposta = f"Procurando encomenda para remover";
             bot.reply_to(mensagem,resposta);
             if(db.verifica_rastreio(id_user=id_user,codigo=codigo)):
@@ -129,7 +137,9 @@ def app(db:DataBase=DataBase(),verificador:Verificadores=Verificadores(),rastrea
     def cpf_funcao(mensagem):
         dados = str(mensagem.text);
         dados = dados.replace('.','').replace('-','').replace('/','');
-        id_user   = mensagem.chat.id;
+        id_user  = mensagem.chat.id;
+        tupla = (id_user,str(mensagem));
+        db.insert_mensagem(tupla=tupla);
         dados = re.findall(   r'(?P<CPF_sem_pontos>[0-9]{11})(?:\n)*'
                                     ,dados,re.MULTILINE | re.IGNORECASE);
         if(dados != []):
@@ -153,7 +163,9 @@ def app(db:DataBase=DataBase(),verificador:Verificadores=Verificadores(),rastrea
     def cnpj_funcao(mensagem):
         dados   = str(mensagem.text);
         dados   = dados.replace('.','').replace('-','').replace('/','');
-        id_user = mensagem.chat.id;
+        id_user  = mensagem.chat.id;
+        tupla = (id_user,str(mensagem));
+        db.insert_mensagem(tupla=tupla);
         dados   = re.findall(   r'(?P<CNPJ_sem_pontos>[0-9]{14})(?:\n)*'
                                     ,dados,re.MULTILINE | re.IGNORECASE);
         if(dados != []):
@@ -174,6 +186,9 @@ def app(db:DataBase=DataBase(),verificador:Verificadores=Verificadores(),rastrea
         bot.reply_to(mensagem,resposta);
     
     def verificar(mensagem):
+        id_user  = mensagem.chat.id;
+        tupla = (id_user,str(mensagem));
+        db.insert_mensagem(tupla=tupla);
         return True;
 
     @bot.message_handler(func=verificar)
@@ -203,8 +218,9 @@ if __name__ == '__main__':
     rastreador  = Rastreio();
     bot         = telebot.TeleBot(senhas.CHAVE_API);
     db.creat_table();
-    db.creat_table_cnpj();
     db.creat_table_cpf();
+    db.creat_table_cnpj();
+    db.creat_table_mensagem();
     # Cria a Thread
     thread_banco = threading.Thread(target=banco, args=(db,rastreador,bot,));
     thread_app   = threading.Thread(target=app, args=(db,verificador,rastreador,bot,));
