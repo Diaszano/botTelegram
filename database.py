@@ -252,7 +252,7 @@ class DataBase():
 
     def select_rastreio(self,comando:str='',id_user:str='') -> list:
         if(comando == ''):
-            comando =   f"SELECT informacoes, nome_rastreio FROM encomenda  WHERE id_user='{id_user}' ORDER BY id";
+            comando =   f"SELECT informacoes, nome_rastreio, codigo FROM encomenda  WHERE id_user='{id_user}' ORDER BY id";
         try:
             self.conexao();
             Connection = self.connection;
@@ -386,6 +386,7 @@ class DataBase():
 if(__name__ == "__main__"):
     db = DataBase();
     db.creat_table();
-    db.creat_table_cnpj();
     db.creat_table_cpf();
+    db.creat_table_cnpj();
+    db.creat_table_mensagem();
 #-----------------------

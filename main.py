@@ -12,7 +12,7 @@ from verificadores import Verificadores
 #-----------------------
 # CONSTANTES
 #-----------------------
-TEMPO_MAXIMO = 5;
+TEMPO_MAXIMO = 2;
 #-----------------------
 # FUNÇÕES()
 #-----------------------
@@ -32,11 +32,14 @@ def banco(db:DataBase=DataBase(),rastreador:Rastreio=Rastreio(),bot:telebot.Tele
                 informacoes      = str(dados[2]);
                 nome             = dados[3];
                 nova_informacoes = rastreador.rastrear(codigo=codigo);
-                if((informacoes.upper() != nova_informacoes.upper()) and (nova_informacoes != "")):
-                    db.update_rastreio(id_user=id_user,codigo=codigo,informacoes=nova_informacoes);
-                    resposta = f"Temos atualizações da sua encomenda \n\n{nova_informacoes}Encomenda: {nome}";
-                    bot.send_message(id_user,resposta);
-                elif(nova_informacoes == ""):
+                if(nova_informacoes != ""):
+                    if(informacoes.upper() != nova_informacoes.upper()):
+                        db.update_rastreio(id_user=id_user,codigo=codigo,informacoes=nova_informacoes);
+                        resposta = f"Temos atualizações da sua encomenda \n\n{nova_informacoes}Encomenda: {codigo} {nome}";
+                        bot.send_message(id_user,resposta);
+                    else:
+                        db.update_rastreio(id_user=id_user,codigo=codigo,informacoes=informacoes);
+                else:
                     db.update_rastreio(id_user=id_user,codigo=codigo,informacoes=informacoes);
         else:
             tempo           = TEMPO_MAXIMO * 60;
@@ -72,7 +75,7 @@ def app(db:DataBase=DataBase(),verificador:Verificadores=Verificadores(),rastrea
             bot.reply_to(mensagem,resposta);
             informacoes = rastreador.rastrear(codigo=codigo); # ----
             if(informacoes != ''):
-                resposta = f"{informacoes}Encomenda: {nome}";
+                resposta = f"{informacoes}Encomenda: {codigo} {nome}";
                 bot.reply_to(mensagem,resposta);
                 # ('id_user','codigo','nome_rastreio','informacoes');
                 tupla = (id_user,codigo,nome,informacoes);
@@ -95,8 +98,8 @@ def app(db:DataBase=DataBase(),verificador:Verificadores=Verificadores(),rastrea
         db.insert_mensagem(tupla=tupla);
         resposta = f"Tu tens 📦 {len(db.select_rastreio(id_user=id_user))} encomendas guardadas";
         bot.reply_to(mensagem,resposta);
-        for informacoes, nome in db.select_rastreio(id_user=id_user):
-            resposta = f"{informacoes}Encomenda: {nome}";
+        for informacoes, nome, codigo in db.select_rastreio(id_user=id_user):
+            resposta = f"{informacoes}Encomenda: {codigo} {nome}";
             bot.reply_to(mensagem,resposta);
 
     @bot.message_handler(commands=["LISTAR","listar"])
