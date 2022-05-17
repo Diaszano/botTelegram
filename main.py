@@ -34,13 +34,10 @@ def banco(db:DataBase=DataBase(),rastreador:Rastreio=Rastreio(),bot:telebot.Tele
                 nova_informacoes = rastreador.rastrear(codigo=codigo);
                 if(nova_informacoes != ""):
                     if(informacoes.upper() != nova_informacoes.upper()):
-                        db.update_rastreio(id_user=id_user,codigo=codigo,informacoes=nova_informacoes);
                         resposta = f"Temos atualizações da sua encomenda \n\n{nova_informacoes}Encomenda: {codigo} {nome}";
                         bot.send_message(id_user,resposta);
-                    else:
-                        db.update_rastreio(id_user=id_user,codigo=codigo,informacoes=informacoes);
-                else:
-                    db.update_rastreio(id_user=id_user,codigo=codigo,informacoes=informacoes);
+                        informacoes = nova_informacoes;
+                db.update_rastreio(id_user=id_user,codigo=codigo,informacoes=informacoes);
         else:
             tempo           = TEMPO_MAXIMO * 60;
             tempo_de_espera = tempo - tempo_banco;
