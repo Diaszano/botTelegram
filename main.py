@@ -51,11 +51,11 @@ def app(db:DataBase=DataBase(),verificador:Verificadores=Verificadores(),rastrea
         id_user  = mensagem.chat.id;
         tupla = (id_user,str(mensagem));
         db.insert_mensagem(tupla=tupla);
-        dados = re.findall(   r'(?P<Codigo>[a-z]{2}[0-9]{9}[a-z]{2})(?:\n)*(?:.[^a-z0-9])*(?:\s)*(?:\n)*(?P<Nome>.{1,30})(?:\n)*'
+        dados = re.findall(   r'(?P<Codigo>[a-z]{2}[0-9]{9}[a-z]{2})(?:\n)*(?:.[^a-z0-9])*(?:\s)*(?:\n)*(?P<Nome>.{1,30})*(?:\n)*'
                                     ,dados,re.MULTILINE | re.IGNORECASE);
         if(dados != []):
             dados = dados[0];
-            if(len(dados) != 2):
+            if(len(dados) < 2):
                 if(re.findall(r'(?P<Codigo>[a-z]{2}[0-9]{9}[a-z]{2})(?:\n)*',dados,re.MULTILINE | re.IGNORECASE) == []):
                     resposta = f"Dados Inválidos";
                     bot.reply_to(mensagem,resposta);
@@ -213,14 +213,10 @@ def app(db:DataBase=DataBase(),verificador:Verificadores=Verificadores(),rastrea
 # MAIN()
 #-----------------------
 if __name__ == '__main__':
-    db          = DataBase();
+    db          = DataBase(host=senhas.host,user=senhas.user,password=senhas.passaword,database=senhas.database);
     verificador = Verificadores();
     rastreador  = Rastreio();
     bot         = telebot.TeleBot(senhas.CHAVE_API);
-    db.creat_table();
-    db.creat_table_cpf();
-    db.creat_table_cnpj();
-    db.creat_table_mensagem();
     # Cria a Thread
     thread_banco = threading.Thread(target=banco, args=(db,rastreador,bot,));
     thread_app   = threading.Thread(target=app, args=(db,verificador,rastreador,bot,));

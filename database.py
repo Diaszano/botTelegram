@@ -41,7 +41,7 @@ class DataBase():
             comando =   """ 
                             INSERT INTO bot_telegram.cpf
                             (id_user, dia, CPF, status)
-                            VALUES(?,now(),?,?);
+                            VALUES(%s,now(),%s,%s)
                         """;
         if(tupla == []):
             tupla = ('id_user', 'CPF', 'status', 'dia');
@@ -93,7 +93,7 @@ class DataBase():
             comando =   """ 
                             INSERT INTO bot_telegram.cnpj
                             (id_user, dia, CNPJ, status)
-                            VALUES(?,now(),?,?);
+                            VALUES(%s,now(),%s,%s)
                         """;
         if(tupla == []):
             tupla = ('id_user', 'CNPJ', 'status', 'dia');
@@ -148,7 +148,7 @@ class DataBase():
             comando =   """ 
                             INSERT INTO bot_telegram.encomenda
                             (id_user, codigo, nome_rastreio, dia, informacoes)
-                            VALUES(?,?,?,now(),?);
+                            VALUES(%s,%s,%s,now(),%s)
                         """;
         if(tupla == []):
             tupla = ('id_user','codigo','nome_rastreio','dia','informacoes');
@@ -277,19 +277,19 @@ class DataBase():
     # -----------------------
     def insert_mensagem(self,comando:str='',tupla=[]) -> None:
         if(comando == ''):
-            comando =   """ 
-                            INSERT INTO bot_telegram.mensagem
-                            (id_user, dia, log_mensagem)
-                            VALUES(?,now(),?);
-                        """;
+            comando =   (
+                            "INSERT INTO bot_telegram.mensagem "
+                            "(id_user, dia, log_mensagem) "
+                            "VALUES(%s,now(),%s) "
+                        );
         if(tupla == []):
             tupla = ('id_user', 'dia', 'mensagem');
             return;
         try:
             [cnxn,cursor] = self.conexao();
-            cursor.execute(comando, tupla);
+            cursor.execute(comando, params=tupla);
             cnxn.commit();
-            cursor.close();
+            # cursor.close();
         except mysql.connector.Error as error:
             print("Falha do comando", error);
             if cnxn:
