@@ -7,7 +7,7 @@
 
 ### O que usamos na infraestrutura?
 
-- [Utilizamos banco de dados SQLite para o armazenamento dos dados](https://www.sqlite.org/index.html)
+- [Utilizamos banco de dados MariaDB para o armazenamento dos dados](https://mariadb.com/)
 - [Utilizamos a linguagem Python](https://www.python.org/)
 - [Utilizamos Telegram](https://web.telegram.org/z/)
 
