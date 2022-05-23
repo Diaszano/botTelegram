@@ -51,7 +51,7 @@ def app(db:DataBase=DataBase(),verificador:Verificadores=Verificadores(),rastrea
         id_user  = mensagem.chat.id;
         tupla = (id_user,str(mensagem));
         db.insert_mensagem(tupla=tupla);
-        dados = re.findall(   r'(?P<Codigo>[a-z]{2}[0-9]{9}[a-z]{2})(?:\n)*(?:.[^a-z0-9])*(?:\s)*(?:\n)*(?P<Nome>.*)(?:\n)*'
+        dados = re.findall(   r'(?P<Codigo>[a-z]{2}[0-9]{9}[a-z]{2})(?:\n)*(?:.[^a-z0-9])*(?:\s)*(?:\n)*(?P<Nome>.{1,30})(?:\n)*'
                                     ,dados,re.MULTILINE | re.IGNORECASE);
         if(dados != []):
             dados = dados[0];

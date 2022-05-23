@@ -1,88 +1,47 @@
 #-----------------------
 # BIBLIOTECAS
 #-----------------------
-import os
-import sqlite3
-from datetime import datetime
+import mysql.connector
 #-----------------------
 # CLASSES
 #-----------------------
 class DataBase():
-    def __init__(self,nome:str="./data/database.db") -> None:
-        arquivo = os.path.basename(nome);
-        pasta   = nome.replace(arquivo,'');
-        if arquivo == '':
-            arquivo = 'database.db';
-        if pasta == '':
-            pasta = './data/';
-        if(not(os.path.exists(pasta))):
-            os.mkdir(pasta);
-        if(not('/data/' in pasta)):
-            self.nome = f'{pasta}/data/';
-            os.mkdir(self.nome);
-            self.nome = f'{self.nome}{arquivo}';
-        else:
-            self.nome = nome;
-    # -----------------------
-    # OUTROS
-    # -----------------------
-    def conexao(self) -> None:
-        self.connection = sqlite3.connect(self.nome);
+    def __init__(self,host:str='',user:str='',password:str='',database:str='')->None:
+        self.host = host;
+        self.user = user;
+        self.password = password;
+        self.database = database;
 
-    def dif_minutos(self,date1) -> float:
-        data_agora = datetime.now();
-        date2      = data_agora.strftime('%Y-%m-%d %H:%M:%S');
-        d1         = datetime.strptime(date1, '%Y-%m-%d %H:%M:%S');
-        d2         = datetime.strptime(date2, '%Y-%m-%d %H:%M:%S');
-        resultado  = d2-d1;
-        minutes    = resultado.total_seconds();
-        minutes    = float(minutes);
-        return minutes;
-    
-    def creat_table(self,comando:str='') -> None:
-        if(comando == ''):
-            comando =   """ CREATE TABLE IF NOT EXISTS encomenda(
-                            id              INTEGER primary key autoincrement,
-                            id_user         TEXT NOT NULL,
-                            codigo          TEXT NOT NULL,
-                            nome_rastreio   TEXT,
-                            data            TEXT NOT NULL,
-                            informacoes     TEXT NOT NULL)
-                        """;
-        try:
-            self.conexao();
-            Connection = self.connection;
-            cursor = Connection.cursor();
-            cursor.execute(comando);
-            Connection.commit();
-            cursor.close();
-        except sqlite3.Error as error:
-            print("Falha do comando", error);
-            if Connection:
-                Connection.close();
-        finally:
-            if Connection:
-                Connection.close();
+    def conexao(self,host:str='',user:str='',password:str='',database:str='')->list:
+        if(host != ''):
+            self.host = host;
+        if(user != ''):
+            self.user = user;
+        if(password != ''):
+            self.password = password;
+        if(database != ''):
+            self.database = database;
+        if((self.host == '') or (self.user == '') or (self.password == '') or (self.database == '')):
+                print("Está faltando argumentos na conexão, faça novamente!");
+                return [None,None];
+        else:
+            cnxn = mysql.connector.connect(
+                host=self.host,
+                user=self.user,
+                password=self.password,
+                database=self.database,
+            );
+            cursor = cnxn.cursor();
+            return [cnxn,cursor];
     # -----------------------
     # CPF
     # -----------------------
-    def creat_table_cpf(self,comando:str='') -> None:
-        if(comando == ''):
-            comando =   """ CREATE TABLE IF NOT EXISTS cpf(
-                            id              INTEGER primary key autoincrement,
-                            id_user         TEXT NOT NULL,
-                            CPF             TEXT NOT NULL,
-                            status          TEXT NOT NULL,
-                            dia             TEXT NOT NULL)
-                        """;
-        self.creat_table(comando=comando);
-    
     def insert_cpf(self,comando:str='',tupla=[]) -> None:
         if(comando == ''):
             comando =   """ 
-                            INSERT INTO cpf
-                            (id_user, CPF, status, dia)
-                            VALUES(?, ?, ?,(SELECT DATETIME('now','localtime')))
+                            INSERT INTO bot_telegram.cpf
+                            (id_user, dia, CPF, status)
+                            VALUES(?,now(),?,?);
                         """;
         if(tupla == []):
             tupla = ('id_user', 'CPF', 'status', 'dia');
@@ -90,66 +49,51 @@ class DataBase():
         if(self.verifica_cpf(id_user=tupla[0],CPF=tupla[1])):
             return;
         try:
-            self.conexao();
-            Connection = self.connection;
-            cursor = Connection.cursor();
+            [cnxn,cursor] = self.conexao();
             cursor.execute(comando, tupla);
-            Connection.commit();
+            cnxn.commit();
             cursor.close();
-        except sqlite3.Error as error:
+        except mysql.connector.Error as error:
             print("Falha do comando", error);
-            if Connection:
-                Connection.close();
+            if cnxn:
+                cnxn.close();
         finally:
-            if Connection:
-                Connection.close();
+            if cnxn:
+                cnxn.close();
 
     def verifica_cpf(self,comando:str='',id_user:str='',CPF:str='') -> bool:
         if(id_user == '' or CPF == ''):
             return False;
         if(comando == ''):
             comando =   f""" 
-                            SELECT * FROM cpf
+                            SELECT * FROM bot_telegram.cpf
                             WHERE id_user='{id_user}' AND CPF LIKE '{CPF}%'
                         """;
         try:
-            self.conexao();
-            Connection = self.connection;
-            cursor = Connection.cursor();
+            [cnxn,cursor] = self.conexao();
             cursor.execute(comando);
             if cursor.fetchall() != []:
                 cursor.close();
                 return True;
             cursor.close();
             return False;
-        except sqlite3.Error as error:
+        except mysql.connector.Error as error:
             print("Falha do comando", error);
-            if Connection:
-                Connection.close();
+            if cnxn:
+                cnxn.close();
             return False;
         finally:
-            if Connection:
-                Connection.close();
+            if cnxn:
+                cnxn.close();
     # -----------------------    
     # CNPJ
     # -----------------------
-    def creat_table_cnpj(self,comando:str='') -> None:
-        if(comando == ''):
-            comando =   """ CREATE TABLE IF NOT EXISTS cnpj(
-                            id              INTEGER primary key autoincrement,
-                            id_user         TEXT NOT NULL,
-                            CNPJ            TEXT NOT NULL,
-                            status          TEXT NOT NULL,
-                            dia             TEXT NOT NULL)
-                        """;
-        self.creat_table(comando=comando);
-    
     def insert_cnpj(self,comando:str='',tupla=[]) -> None:
         if(comando == ''):
             comando =   """ 
-                            INSERT INTO cnpj
-                            (id_user, CNPJ, status, dia)
-                            VALUES(?, ?, ?,(SELECT DATETIME('now','localtime')))
+                            INSERT INTO bot_telegram.cnpj
+                            (id_user, dia, CNPJ, status)
+                            VALUES(?,now(),?,?);
                         """;
         if(tupla == []):
             tupla = ('id_user', 'CNPJ', 'status', 'dia');
@@ -163,7 +107,7 @@ class DataBase():
             return False;
         if(comando == ''):
             comando =   f""" 
-                            SELECT * FROM cnpj
+                            SELECT * FROM bot_telegram.cnpj
                             WHERE id_user='{id_user}' AND CNPJ LIKE '{CNPJ}%'
                         """;
         return self.verifica_cpf(comando=comando,id_user=id_user,CPF=CNPJ);
@@ -176,15 +120,13 @@ class DataBase():
         if(comando == ''):
             comando =   f""" 
                             SELECT *
-                            FROM encomenda
+                            FROM bot_telegram.encomenda
                             WHERE id_user='{id_user}' 
                             AND
                             codigo='{codigo}'
                         """;
         try:
-            self.conexao();
-            Connection = self.connection;
-            cursor = Connection.cursor();
+            [cnxn,cursor] = self.conexao();
             cursor.execute(comando);
             tmp = cursor.fetchall();
             if tmp != []:
@@ -192,91 +134,83 @@ class DataBase():
                 return True;
             cursor.close();
             return False;
-        except sqlite3.Error as error:
+        except mysql.connector.Error as error:
             print("Falha do comando", error);
-            if Connection:
-                Connection.close();
+            if cnxn:
+                cnxn.close();
             return False;
         finally:
-            if Connection:
-                Connection.close();
+            if cnxn:
+                cnxn.close();
     
     def insert_rastreio(self,comando:str='',tupla=[]) -> None:
         if(comando == ''):
             comando =   """ 
-                            INSERT INTO encomenda
-                            (id_user, codigo, nome_rastreio, 'data', informacoes)
-                            VALUES(?, ?, ?,(SELECT DATETIME('now','localtime')), ?)
+                            INSERT INTO bot_telegram.encomenda
+                            (id_user, codigo, nome_rastreio, dia, informacoes)
+                            VALUES(?,?,?,now(),?);
                         """;
         if(tupla == []):
-            tupla = ('id_user','codigo','nome_rastreio','data','informacoes');
+            tupla = ('id_user','codigo','nome_rastreio','dia','informacoes');
         if(self.verifica_rastreio(id_user=tupla[0],codigo=tupla[1])):
             return;
         try:
-            self.conexao();
-            Connection = self.connection;
-            cursor = Connection.cursor();
+            [cnxn,cursor] = self.conexao();
             cursor.execute(comando, tupla);
-            Connection.commit();
+            cnxn.commit();
             cursor.close();
-        except sqlite3.Error as error:
+        except mysql.connector.Error as error:
             print("Falha do comando", error);
-            if Connection:
-                Connection.close();
+            if cnxn:
+                cnxn.close();
         finally:
-            if Connection:
-                Connection.close();
+            if cnxn:
+                cnxn.close();
     
     def delete_rastreio(self,comando:str='',id_user:str='',codigo:str='') -> None:
         if(id_user == '' or codigo == ''):
             return;
         if(comando == ''):
             comando =   f""" 
-                            DELETE FROM encomenda
+                            DELETE FROM bot_telegram.encomenda
                             WHERE id_user='{id_user}' AND codigo='{codigo}'
                         """;
         try:
-            self.conexao();
-            Connection = self.connection;
-            cursor = Connection.cursor();
+            [cnxn,cursor] = self.conexao();
             cursor.execute(comando);
-            Connection.commit();
+            cnxn.commit();
             cursor.close();
-        except sqlite3.Error as error:
+        except mysql.connector.Error as error:
             print("Falha do comando", error);
-            if Connection:
-                Connection.close();
+            if cnxn:
+                cnxn.close();
         finally:
-            if Connection:
-                Connection.close();
+            if cnxn:
+                cnxn.close();
 
     def select_rastreio(self,comando:str='',id_user:str='') -> list:
         if(comando == ''):
-            comando =   f"SELECT informacoes, nome_rastreio, codigo FROM encomenda  WHERE id_user='{id_user}' ORDER BY id";
+            comando =   f"SELECT informacoes, nome_rastreio, codigo FROM bot_telegram.encomenda  WHERE id_user='{id_user}' ORDER BY id DESC";
         try:
-            self.conexao();
-            Connection = self.connection;
-            cursor     = Connection.cursor();
+            [cnxn,cursor] = self.conexao();
             cursor.execute(comando);
             data = cursor.fetchall();
             cursor.close();
             return data;
-        except sqlite3.Error as error:
+        except mysql.connector.Error as error:
             print("Falha do comando", error);
-            if Connection:
-                Connection.close();
+            if cnxn:
+                cnxn.close();
                 return [];
         finally:
-            if Connection:
-                Connection.close();
+            if cnxn:
+                cnxn.close();
     
     def atualiza_rastreio(self,comando:str='') -> list:
         if(comando == ''):
-            comando =   f'SELECT id_user, codigo, informacoes, nome_rastreio FROM encomenda ORDER BY data LIMIT 1';
+            comando =   f'SELECT id_user, codigo, informacoes, nome_rastreio FROM encomenda ORDER BY dia LIMIT 1';
         try:
-            self.conexao();
-            Connection = self.connection;
-            cursor     = Connection.cursor();
+            [cnxn,cursor] = self.conexao();
             cursor.execute(comando);
             data = cursor.fetchall();
             if data != []:
@@ -288,105 +222,84 @@ class DataBase():
                 return [id_user,codigo,info,nome];
             cursor.close();
             return [];
-        except sqlite3.Error as error:
+        except mysql.connector.Error as error:
             print("Falha do comando", error);
-            if Connection:
-                Connection.close();
+            if cnxn:
+                cnxn.close();
                 return [];
         finally:
-            if Connection:
-                Connection.close();
+            if cnxn:
+                cnxn.close();
 
     def validar_rastreio(self,comando:str='') -> float:
         if(comando == ''):
-            comando =   f'SELECT data FROM encomenda ORDER BY data LIMIT 1';
+            comando =   f'SELECT TIMESTAMPDIFF(SECOND, dia,NOW()) from bot_telegram.encomenda ORDER BY dia LIMIT 1';
         try:
-            self.conexao();
-            Connection = self.connection;
-            cursor     = Connection.cursor();
+            [cnxn,cursor] = self.conexao();
             cursor.execute(comando);
             data = cursor.fetchall();
             if data != []:
-                data = str(data[0][0]);
-                data = self.dif_minutos(data);
+                data = float(data[0][0]);
                 cursor.close();
                 return data;
             cursor.close();
             return -1;
-        except sqlite3.Error as error:
+        except mysql.connector.Error as error:
             print("Falha do comando", error);
-            if Connection:
-                Connection.close();
+            if cnxn:
+                cnxn.close();
                 return -1;
         finally:
-            if Connection:
-                Connection.close();
+            if cnxn:
+                cnxn.close();
     
     def update_rastreio(self,id_user:str='',codigo:str='',comando:str='',informacoes:str='') -> bool:
         if(comando == ''):
-            comando =   f""" UPDATE encomenda
-                            SET 'data'=(SELECT DATETIME('now','localtime')), 
-                            informacoes='{informacoes}'
-                            WHERE id_user='{id_user}' AND codigo='{codigo}'
+            comando =   f"""    UPDATE encomenda
+                                SET dia=now(), 
+                                informacoes='{informacoes}'
+                                WHERE id_user='{id_user}' AND codigo='{codigo}'
                         """;
         try:
-            self.conexao();
-            Connection = self.connection;
-            cursor     = Connection.cursor();
+            [cnxn,cursor] = self.conexao();
             cursor.execute(comando);
-            Connection.commit();
+            cnxn.commit();
             cursor.close();
-        except sqlite3.Error as error:
+        except mysql.connector.Error as error:
             print("Falha do comando", error);
-            if Connection:
-                Connection.close();
+            if cnxn:
+                cnxn.close();
         finally:
-            if Connection:
-                Connection.close();
+            if cnxn:
+                cnxn.close();
     # -----------------------
     # Mensagens
     # -----------------------
-    def creat_table_mensagem(self,comando:str='') -> None:
-        if(comando == ''):
-            comando =   """ CREATE TABLE IF NOT EXISTS mensagem(
-                            id              INTEGER primary key autoincrement,
-                            id_user         TEXT NOT NULL,
-                            dia             TEXT NOT NULL,
-                            mensagem        BLOB NOT NULL)
-                        """;
-        self.creat_table(comando=comando);
-
     def insert_mensagem(self,comando:str='',tupla=[]) -> None:
         if(comando == ''):
             comando =   """ 
-                            INSERT INTO mensagem
-                            (id_user, dia, mensagem)
-                            VALUES(?, (SELECT DATETIME('now','localtime')), ?)
+                            INSERT INTO bot_telegram.mensagem
+                            (id_user, dia, log_mensagem)
+                            VALUES(?,now(),?);
                         """;
         if(tupla == []):
             tupla = ('id_user', 'dia', 'mensagem');
             return;
         try:
-            self.conexao();
-            Connection = self.connection;
-            cursor = Connection.cursor();
+            [cnxn,cursor] = self.conexao();
             cursor.execute(comando, tupla);
-            Connection.commit();
+            cnxn.commit();
             cursor.close();
-        except sqlite3.Error as error:
+        except mysql.connector.Error as error:
             print("Falha do comando", error);
-            if Connection:
-                Connection.close();
+            if cnxn:
+                cnxn.close();
         finally:
-            if Connection:
-                Connection.close();
+            if cnxn:
+                cnxn.close();
 #-----------------------
 # MAIN()
 #-----------------------
 if(__name__ == "__main__"):
-    db = DataBase();
-    db.creat_table();
-    db.creat_table_cpf();
-    db.creat_table_cnpj();
-    db.creat_table_mensagem();
+    pass;
 #-----------------------
