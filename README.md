@@ -4,6 +4,7 @@
 
 - Rastreio de encomendas
 - Verificar o CPF e CNPJ
+- Hora do Remédio
 
 ### O que usamos na infraestrutura?
 
@@ -15,6 +16,7 @@
 
 - [X] Rastreio de encomendas
 - [x] Verificar o CPF e CNPJ
+- [ ] Hora do Remédio
 
 ### Como acessar o bot?
 

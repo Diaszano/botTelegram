@@ -30,7 +30,6 @@ class Rastreio:
     
     def limparMensagem(self,eventos:list = []) -> list:
         rastreio          = [];
-
         re_data           = re.compile(r'((\"dtHrCriado\"\:)(\".*?\"))', re.MULTILINE | re.IGNORECASE);
         re_tipo           = re.compile(r'((\"tipo\"\:)(\"[^0-9]*?\"))', re.MULTILINE | re.IGNORECASE);
         re_detalhe        = re.compile(r'((\"detalhe\"\:)(\".*?\"))', re.MULTILINE | re.IGNORECASE);

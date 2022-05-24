@@ -6,17 +6,38 @@ import time
 import telebot
 import threading
 from login import senhas
+from datetime import datetime
 from database import DataBase
 from rastreador import Rastreio
 from verificadores import Verificadores
 #-----------------------
 # CONSTANTES
 #-----------------------
+HORA = 20;
 TEMPO_MAXIMO = 2;
 #-----------------------
 # FUNÇÕES()
 #-----------------------
-def banco(db:DataBase=DataBase(),rastreador:Rastreio=Rastreio(),bot:telebot.TeleBot = telebot.TeleBot(senhas.CHAVE_API))->None:
+def hora_do_remedio(bot:telebot.TeleBot = telebot.TeleBot(senhas.CHAVE_API)) -> None:
+    isTrue = True;
+    while True:
+        hora = int(datetime.today().strftime('%H'));
+        if(hora == HORA and isTrue):
+            IDs      = senhas.IDs;
+            resposta = "Horário do Remédio 😁💊";
+            for id_user in IDs:
+                bot.send_message(id_user,resposta);
+            isTrue = False;
+            pass;
+        elif(hora != HORA):
+            isTrue = True;
+        time.sleep(30);
+
+def banco(  rastreador:Rastreio=Rastreio(),
+            bot:telebot.TeleBot = telebot.TeleBot(senhas.CHAVE_API),
+            db:DataBase=DataBase(host=senhas.host,user=senhas.user,
+            password=senhas.passaword,database=senhas.database)
+        )->None:
     while True:
         tempo_banco = db.validar_rastreio();
         if((tempo_banco) == -1):
@@ -43,8 +64,14 @@ def banco(db:DataBase=DataBase(),rastreador:Rastreio=Rastreio(),bot:telebot.Tele
             tempo_de_espera = tempo - tempo_banco;
             if tempo_de_espera > 0:
                 time.sleep(tempo_de_espera);
+        time.sleep(1);
 
-def app(db:DataBase=DataBase(),verificador:Verificadores=Verificadores(),rastreador:Rastreio=Rastreio(),bot:telebot.TeleBot = telebot.TeleBot(senhas.CHAVE_API))->None:
+def app(verificador:Verificadores=Verificadores(),
+        rastreador:Rastreio=Rastreio(),
+        bot:telebot.TeleBot = telebot.TeleBot(senhas.CHAVE_API),
+        db:DataBase=DataBase(host=senhas.host,user=senhas.user,
+        password=senhas.passaword,database=senhas.database)
+        )->None:
     @bot.message_handler(commands=["rastrear","RASTREAR"])
     def rastrear(mensagem):
         dados = mensagem.text;
@@ -213,16 +240,20 @@ def app(db:DataBase=DataBase(),verificador:Verificadores=Verificadores(),rastrea
 # MAIN()
 #-----------------------
 if __name__ == '__main__':
-    db          = DataBase(host=senhas.host,user=senhas.user,password=senhas.passaword,database=senhas.database);
+    # db          = DataBase(host=senhas.host,user=senhas.user,password=senhas.passaword,database=senhas.database);
     verificador = Verificadores();
     rastreador  = Rastreio();
     bot         = telebot.TeleBot(senhas.CHAVE_API);
     # Cria a Thread
-    thread_banco = threading.Thread(target=banco, args=(db,rastreador,bot,));
-    thread_app   = threading.Thread(target=app, args=(db,verificador,rastreador,bot,));
+    thread_app     = threading.Thread(target=app, args=(verificador,rastreador,bot,));
+    thread_banco   = threading.Thread(target=banco, args=(rastreador,bot,));
+    thread_remedio = threading.Thread(target=hora_do_remedio, args=(bot,));
     # Inicia a Thread
-    thread_banco.start();
     thread_app.start();
+    time.sleep(5);
+    thread_banco.start();
+    time.sleep(5);
+    thread_remedio.start();
     # Aguarda finalizar a Thread
     thread_banco.join();
     thread_app.join();

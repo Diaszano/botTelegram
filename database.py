@@ -55,11 +55,7 @@ class DataBase():
             cursor.close();
         except mysql.connector.Error as error:
             print("Falha do comando", error);
-            if cnxn:
-                cnxn.close();
-        finally:
-            if cnxn:
-                cnxn.close();
+            
 
     def verifica_cpf(self,comando:str='',id_user:str='',CPF:str='') -> bool:
         if(id_user == '' or CPF == ''):
@@ -79,12 +75,8 @@ class DataBase():
             return False;
         except mysql.connector.Error as error:
             print("Falha do comando", error);
-            if cnxn:
-                cnxn.close();
             return False;
-        finally:
-            if cnxn:
-                cnxn.close();
+        
     # -----------------------    
     # CNPJ
     # -----------------------
@@ -136,12 +128,7 @@ class DataBase():
             return False;
         except mysql.connector.Error as error:
             print("Falha do comando", error);
-            if cnxn:
-                cnxn.close();
             return False;
-        finally:
-            if cnxn:
-                cnxn.close();
     
     def insert_rastreio(self,comando:str='',tupla=[]) -> None:
         if(comando == ''):
@@ -161,11 +148,8 @@ class DataBase():
             cursor.close();
         except mysql.connector.Error as error:
             print("Falha do comando", error);
-            if cnxn:
-                cnxn.close();
-        finally:
-            if cnxn:
-                cnxn.close();
+            
+        
     
     def delete_rastreio(self,comando:str='',id_user:str='',codigo:str='') -> None:
         if(id_user == '' or codigo == ''):
@@ -182,11 +166,8 @@ class DataBase():
             cursor.close();
         except mysql.connector.Error as error:
             print("Falha do comando", error);
-            if cnxn:
-                cnxn.close();
-        finally:
-            if cnxn:
-                cnxn.close();
+            
+        
 
     def select_rastreio(self,comando:str='',id_user:str='') -> list:
         if(comando == ''):
@@ -199,12 +180,8 @@ class DataBase():
             return data;
         except mysql.connector.Error as error:
             print("Falha do comando", error);
-            if cnxn:
-                cnxn.close();
-                return [];
-        finally:
-            if cnxn:
-                cnxn.close();
+            return [];
+        
     
     def atualiza_rastreio(self,comando:str='') -> list:
         if(comando == ''):
@@ -224,12 +201,7 @@ class DataBase():
             return [];
         except mysql.connector.Error as error:
             print("Falha do comando", error);
-            if cnxn:
-                cnxn.close();
-                return [];
-        finally:
-            if cnxn:
-                cnxn.close();
+            return [];
 
     def validar_rastreio(self,comando:str='') -> float:
         if(comando == ''):
@@ -246,12 +218,7 @@ class DataBase():
             return -1;
         except mysql.connector.Error as error:
             print("Falha do comando", error);
-            if cnxn:
-                cnxn.close();
-                return -1;
-        finally:
-            if cnxn:
-                cnxn.close();
+            return -1;
     
     def update_rastreio(self,id_user:str='',codigo:str='',comando:str='',informacoes:str='') -> bool:
         if(comando == ''):
@@ -267,11 +234,8 @@ class DataBase():
             cursor.close();
         except mysql.connector.Error as error:
             print("Falha do comando", error);
-            if cnxn:
-                cnxn.close();
-        finally:
-            if cnxn:
-                cnxn.close();
+            
+        
     # -----------------------
     # Mensagens
     # -----------------------
@@ -289,14 +253,9 @@ class DataBase():
             [cnxn,cursor] = self.conexao();
             cursor.execute(comando, params=tupla);
             cnxn.commit();
-            # cursor.close();
+            cursor.close();
         except mysql.connector.Error as error:
             print("Falha do comando", error);
-            if cnxn:
-                cnxn.close();
-        finally:
-            if cnxn:
-                cnxn.close();
 #-----------------------
 # MAIN()
 #-----------------------
