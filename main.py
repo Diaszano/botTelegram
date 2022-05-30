@@ -7,9 +7,9 @@ import telebot
 import threading
 from login import senhas
 from datetime import datetime
-from database import DataBase
 from rastreador import Rastreio
-from verificadores import Verificadores
+from verificador import Verificadores
+from banco import DataBaseMariaDB,DataBaseSqlite
 #-----------------------
 # CONSTANTES
 #-----------------------
@@ -36,8 +36,7 @@ def hora_do_remedio(bot:telebot.TeleBot = telebot.TeleBot(senhas.CHAVE_API)) -> 
 def banco(  rastreador:Rastreio=Rastreio(),
             bot:telebot.TeleBot = telebot.TeleBot(senhas.CHAVE_API),
             db:DataBase=DataBase(host=senhas.host,user=senhas.user,
-            password=senhas.passaword,database=senhas.database)
-        )->None:
+            password=senhas.passaword,database=senhas.database))->None:
     while True:
         tempo_banco = db.validar_rastreio();
         if((tempo_banco) == -1):
@@ -70,15 +69,14 @@ def app(verificador:Verificadores=Verificadores(),
         rastreador:Rastreio=Rastreio(),
         bot:telebot.TeleBot = telebot.TeleBot(senhas.CHAVE_API),
         db:DataBase=DataBase(host=senhas.host,user=senhas.user,
-        password=senhas.passaword,database=senhas.database)
-        )->None:
+        password=senhas.passaword,database=senhas.database))->None:
     @bot.message_handler(commands=["rastrear","RASTREAR"])
     def rastrear(mensagem):
         dados = mensagem.text;
         id_user  = mensagem.chat.id;
         tupla = (id_user,str(mensagem));
         db.insert_mensagem(tupla=tupla);
-        dados = re.findall(   r'(?P<Codigo>[a-z]{2}[0-9]{9}[a-z]{2})(?:\n)*(?:.[^a-z0-9])*(?:\s)*(?:\n)*(?P<Nome>.{1,30})*(?:\n)*'
+        dados = re.findall( r'(?P<Codigo>[a-z]{2}[0-9]{9}[a-z]{2})(?:\n)*(?:.[^a-z0-9])*(?:\s)*(?:\n)*(?P<Nome>.{1,30})*(?:\n)*'
                                     ,dados,re.MULTILINE | re.IGNORECASE);
         if(dados != []):
             dados = dados[0];

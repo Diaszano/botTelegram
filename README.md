@@ -9,6 +9,7 @@
 ### O que usamos na infraestrutura?
 
 - [Utilizamos banco de dados MariaDB para o armazenamento dos dados](https://mariadb.com/)
+- [Utilizamos banco de dados SqLite para o backup local dos dados](https://mariadb.com/)
 - [Utilizamos a linguagem Python](https://www.python.org/)
 - [Utilizamos Telegram](https://web.telegram.org/z/)
 
