@@ -10,10 +10,10 @@ import mysql.connector
 # CLASSES
 #-----------------------
 class DataBaseMariaDB():
-    def __new__(cls, *args, **kwargs):
-        if not hasattr(cls, '__is_alive'):
-            cls.__is_alive = super().__new__(cls,*args, **kwargs);
-        return cls.__is_alive;
+    # def __new__(cls, *args, **kwargs):
+    #     if not hasattr(cls, '__is_alive'):
+    #         cls.__is_alive = super().__new__(cls,*args, **kwargs);
+    #     return cls.__is_alive;
 
     def __init__(   self,host:str='',user:str='',
                     password:str='',database:str='')->None:
