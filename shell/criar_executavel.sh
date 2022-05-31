@@ -2,8 +2,7 @@
 pyinstaller \
 --clean \
 --console  \
---additional-hooks-dir='./' \
---distpath=linuxdist \
+--distpath=executavel \
 --workpath=temporario \
 --specpath=temporario \
 main.py \
