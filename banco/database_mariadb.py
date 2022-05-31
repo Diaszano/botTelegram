@@ -3,6 +3,7 @@
 # BIBLIOTECAS
 #-----------------------
 import mysql.connector
+from .database_sqlite import DataBaseSqlite
 #-----------------------
 # CONSTANTES
 #-----------------------
@@ -21,6 +22,7 @@ class DataBaseMariaDB():
         self.__user     = user;
         self.__password = password;
         self.__database = database;
+        self.__lite     = DataBaseSqlite();
     
     def __conexao(self,host:str='',user:str='',
                 password:str='',database:str='')->list:
@@ -52,7 +54,7 @@ class DataBaseMariaDB():
     # -----------------------
     def insert_cpf(self,comando:str='',tupla=[]) -> None:
         if(comando == ''):
-            comando = ( "INSERT INTO bot_telegram.cpf "
+            comando = ( "INSERT INTO cpf "
                         "(id_user, dia, CPF, status) "
                         "VALUES(%s,now(),%s,%s) ");
         if(tupla == []):
@@ -73,7 +75,7 @@ class DataBaseMariaDB():
         if(id_user == '' or CPF == ''):
             return False;
         if(comando == ''):
-            comando = ( f"SELECT * FROM bot_telegram.cpf "
+            comando = ( f"SELECT * FROM cpf "
                         f"WHERE id_user='{id_user}' "
                         f"AND CPF LIKE '{CPF}%'");
         try:
@@ -92,7 +94,7 @@ class DataBaseMariaDB():
     # -----------------------
     def insert_cnpj(self,comando:str='',tupla=[]) -> None:
         if(comando == ''):
-            comando = ( " INSERT INTO bot_telegram.cnpj "
+            comando = ( " INSERT INTO cnpj "
                         " (id_user, dia, CNPJ, status) "
                         " VALUES(%s,now(),%s,%s)");
         if(tupla == []):
@@ -107,7 +109,7 @@ class DataBaseMariaDB():
         if(id_user == '' or CNPJ == ''):
             return False;
         if(comando == ''):
-            comando = ( f" SELECT * FROM bot_telegram.cnpj "
+            comando = ( f" SELECT * FROM cnpj "
                         f" WHERE id_user='{id_user}' "
                         f" AND CNPJ LIKE '{CNPJ}%' ");
         return self.__verifica_cpf( comando=comando,id_user=id_user,
@@ -121,7 +123,7 @@ class DataBaseMariaDB():
             return False;
         if(comando == ''):
             comando = ( f" SELECT * "
-                        f" FROM bot_telegram.encomenda "
+                        f" FROM encomenda "
                         f" WHERE id_user='{id_user}' "
                         f" AND codigo='{codigo}'");
         try:
@@ -139,7 +141,7 @@ class DataBaseMariaDB():
     
     def insert_rastreio(self,comando:str='',tupla=[]) -> None:
         if(comando == ''):
-            comando = ( " INSERT INTO bot_telegram.encomenda "
+            comando = ( " INSERT INTO encomenda "
                         " (id_user, codigo, nome_rastreio, "
                         " dia, informacoes) VALUES(%s,%s,%s, "
                         " now(),%s)");
@@ -161,7 +163,7 @@ class DataBaseMariaDB():
         if(id_user == '' or codigo == ''):
             return;
         if(comando == ''):
-            comando = ( f" DELETE FROM bot_telegram.encomenda "
+            comando = ( f" DELETE FROM encomenda "
                         f" WHERE id_user='{id_user}' "
                         f" AND codigo='{codigo}' ");
         try:
@@ -175,7 +177,7 @@ class DataBaseMariaDB():
     def select_rastreio(self,comando:str='',id_user:str='') -> list:
         if(comando == ''):
             comando = ( f" SELECT informacoes, nome_rastreio, "
-                        f" codigo FROM bot_telegram.encomenda  "
+                        f" codigo FROM encomenda  "
                         f" WHERE id_user='{id_user}' "
                         f" ORDER BY id DESC ");
         try:
@@ -185,6 +187,7 @@ class DataBaseMariaDB():
             cursor.close();
             return data;
         except mysql.connector.Error as error:
+
             print("Falha do comando", error);
             return [];
     
@@ -214,7 +217,7 @@ class DataBaseMariaDB():
     def validar_rastreio(self,comando:str='') -> float:
         if(comando == ''):
             comando = ( f" SELECT TIMESTAMPDIFF(SECOND, dia,NOW()) "
-                        f" from bot_telegram.encomenda "
+                        f" from encomenda "
                         f" ORDER BY dia LIMIT 1 ");
         try:
             [cnxn,cursor] = self.__conexao();
@@ -250,7 +253,7 @@ class DataBaseMariaDB():
     # -----------------------
     def insert_mensagem(self,comando:str='',tupla=[]) -> None:
         if(comando == ''):
-            comando = ( "INSERT INTO bot_telegram.mensagem "
+            comando = ( "INSERT INTO mensagem "
                         "(id_user, dia, log_mensagem) "
                         "VALUES(%s,now(),%s) ");
         if(tupla == []):

@@ -129,8 +129,8 @@ class DataBaseSqlite():
     # -----------------------
     def insert_cpf(self,comando:str='',tupla=[]) -> None:
         if(comando == ''):
-            comando = ( " INSERT INTO cpf "
-                        " (id_user, CPF, status, dia) "
+            comando = ( "INSERT INTO cpf "
+                        "(id_user, CPF, status, dia) "
                         " VALUES(?, ?, ?, "
                         " (SELECT DATETIME('now','localtime')))");
         if(tupla == []):
@@ -157,9 +157,9 @@ class DataBaseSqlite():
         if(id_user == '' or CPF == ''):
             return False;
         if(comando == ''):
-            comando = ( f" SELECT * FROM cpf "
-                        f" WHERE id_user='{id_user}' "
-                        f" AND CPF LIKE '{CPF}%'");
+            comando = ( f"SELECT * FROM cpf "
+                        f"WHERE id_user='{id_user}' "
+                        f"AND CPF LIKE '{CPF}%'");
         try:
             Connection = self.__conexao();
             cursor = Connection.cursor();
@@ -182,8 +182,8 @@ class DataBaseSqlite():
     # -----------------------
     def insert_cnpj(self,comando:str='',tupla=[]) -> None:
         if(comando == ''):
-            comando = ( f" INSERT INTO cnpj"
-                        f" (id_user, CNPJ, status, dia)"
+            comando = ( " INSERT INTO cnpj "
+                        " (id_user, dia, CNPJ, status) "
                         f" VALUES(?, ?, ?,("
                         f" SELECT DATETIME('now','localtime')))");
         if(tupla == []):
@@ -200,7 +200,7 @@ class DataBaseSqlite():
         if(comando == ''):
             comando = ( f" SELECT * FROM cnpj "
                         f" WHERE id_user='{id_user}' "
-                        f" AND CNPJ LIKE '{CNPJ}%'");
+                        f" AND CNPJ LIKE '{CNPJ}%' ");
         return self.verifica_cpf(   comando=comando,
                                     id_user=id_user,CPF=CNPJ);
     # -----------------------    
@@ -236,14 +236,14 @@ class DataBaseSqlite():
     
     def insert_rastreio(self,comando:str='',tupla=[]) -> None:
         if(comando == ''):
-            comando = ( f" INSERT INTO encomenda "
-                        f" (id_user, codigo, nome_rastreio, "
-                        f" dia, informacoes) "
+            comando = ( " INSERT INTO encomenda "
+                        " (id_user, codigo, nome_rastreio, "
+                        " dia, informacoes) "
                         f" VALUES(?, ?, ?, "
                         f" (SELECT DATETIME('now','localtime')), ?)");
         if(tupla == []):
             tupla = (   'id_user','codigo','nome_rastreio',
-                        'data','informacoes');
+                        'dia','informacoes');
         if(self.verifica_rastreio(id_user=tupla[0],codigo=tupla[1])):
             return;
         try:
@@ -267,7 +267,7 @@ class DataBaseSqlite():
         if(comando == ''):
             comando = ( f" DELETE FROM encomenda "
                         f" WHERE id_user='{id_user}' "
-                        f" AND codigo='{codigo}'");
+                        f" AND codigo='{codigo}' ");
         try:
             Connection = self.__conexao();
             cursor = Connection.cursor();
@@ -286,7 +286,8 @@ class DataBaseSqlite():
         if(comando == ''):
             comando = ( f" SELECT informacoes, nome_rastreio, "
                         f" codigo FROM encomenda  "
-                        f" WHERE id_user='{id_user}' ORDER BY id");
+                        f" WHERE id_user='{id_user}' "
+                        f" ORDER BY id DESC ");
         try:
             Connection = self.__conexao();
             cursor     = Connection.cursor();
@@ -307,7 +308,8 @@ class DataBaseSqlite():
         if(comando == ''):
             comando = ( f" SELECT id_user, codigo, "
                         f" informacoes, nome_rastreio "
-                        f" FROM encomenda ORDER BY data LIMIT 1");
+                        f" FROM encomenda ORDER BY dia "
+                        f" LIMIT 1 ");
         try:
             Connection = self.__conexao();
             cursor     = Connection.cursor();
@@ -333,8 +335,8 @@ class DataBaseSqlite():
 
     def validar_rastreio(self,comando:str='') -> float:
         if(comando == ''):
-            comando = ( f" SELECT data FROM encomenda "
-                        f" ORDER BY data LIMIT 1");
+            comando = ( f" SELECT dia FROM encomenda "
+                        f" ORDER BY dia LIMIT 1");
         try:
             Connection = self.__conexao();
             cursor     = Connection.cursor();
@@ -383,8 +385,8 @@ class DataBaseSqlite():
     # -----------------------
     def insert_mensagem(self,comando:str='',tupla=[]) -> None:
         if(comando == ''):
-            comando = ( f" INSERT INTO mensagem "
-                        f" (id_user, dia, mensagem) "
+            comando = ( "INSERT INTO mensagem "
+                        "(id_user, dia, log_mensagem) "
                         f" VALUES(?, (SELECT DATETIME"
                         f"('now','localtime')), ?) ");
         if(tupla == []):

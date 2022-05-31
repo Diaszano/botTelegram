@@ -152,7 +152,8 @@ def app(verificador:Verificadores,rastreador:Rastreio,
                     f"{len(db.select_rastreio(id_user=id_user))} "
                     f"encomendas guardadas");
         bot.reply_to(mensagem,resposta);
-        for informacoes, nome, codigo in db.select_rastreio(id_user):
+        for informacoes, nome, codigo in db.select_rastreio(
+                                            id_user=id_user):
             resposta = f"{informacoes}Encomenda: {codigo} {nome}";
             bot.reply_to(mensagem,resposta);
 
@@ -300,14 +301,18 @@ def app(verificador:Verificadores,rastreador:Rastreio,
 # MAIN()
 #-----------------------
 if __name__ == '__main__':
-    verificador = Verificadores();
-    rastreador  = Rastreio();
+    db = maria( host=senhas.host,user=senhas.user,
+                password=senhas.passaword,
+                database=senhas.database);
+    bkp         = lite();
     bot         = telebot.TeleBot(senhas.CHAVE_API);
+    rastreador  = Rastreio();
+    verificador = Verificadores();
     # Cria a Thread
     thread_app     =    threading.Thread(target=app, 
-                        args=(verificador,rastreador,bot,));
+                        args=(verificador,rastreador,bot,db,bkp,));
     thread_banco   =    threading.Thread(target=banco, 
-                        args=(rastreador,bot,));
+                        args=(rastreador,bot,db,bkp,));
     thread_remedio =    threading.Thread(target=hora_do_remedio, 
                         args=(bot,));
     # Inicia a Thread
