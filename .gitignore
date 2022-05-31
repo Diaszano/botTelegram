@@ -6,6 +6,8 @@ datas/
 data/
 data/database.db
 *.db
+temporario/
+linuxdist/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

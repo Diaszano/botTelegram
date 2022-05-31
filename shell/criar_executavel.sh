@@ -1,9 +1,14 @@
 #!/bin/bash
-pyinstaller --console --clean --distpath=linuxdist --workpath=temporario main.py --onefile --name bot_telegram.dzn
-rm -r *.spec
-rm -r ./__pycache__/
-cp ./linuxdist/* ./
+pyinstaller \
+--clean \
+--console  \
+--additional-hooks-dir='./' \
+--distpath=linuxdist \
+--workpath=temporario \
+--specpath=temporario \
+main.py \
+--onefile \
+--name bot_telegram.dzn
 rm -r ./temporario/
-rm -r ./linuxdist/
 clear
 echo "Cridado o executavel bot_telegram.dzn"

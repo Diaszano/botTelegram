@@ -10,7 +10,7 @@ from datetime import datetime
 #-----------------------
 class DataBaseSqlite():
     def __init__(self) -> None:
-        caminho = os.path.dirname(os.path.realpath(__file__));
+        caminho = os.path.dirname(os.path.realpath('~/'));
         pasta   = os.path.join(caminho,"data");
         arquivo    = "rastreador.db";
         if(not(os.path.exists(pasta))):

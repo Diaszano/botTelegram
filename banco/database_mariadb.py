@@ -3,7 +3,6 @@
 # BIBLIOTECAS
 #-----------------------
 import mysql.connector
-from .database_sqlite import DataBaseSqlite
 #-----------------------
 # CONSTANTES
 #-----------------------
@@ -22,7 +21,6 @@ class DataBaseMariaDB():
         self.__user     = user;
         self.__password = password;
         self.__database = database;
-        self.__lite     = DataBaseSqlite();
     
     def __conexao(self,host:str='',user:str='',
                 password:str='',database:str='')->list:
