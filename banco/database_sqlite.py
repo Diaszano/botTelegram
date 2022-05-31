@@ -1,3 +1,4 @@
+"""Conexão com o Banco de Dados SqLite"""
 #-----------------------
 # BIBLIOTECAS
 #-----------------------
@@ -7,51 +8,111 @@ from datetime import datetime
 #-----------------------
 # CLASSES
 #-----------------------
-class DataBase():
-    def __init__(self,nome:str="./data/database.db") -> None:
-        arquivo = os.path.basename(nome);
-        pasta   = nome.replace(arquivo,'');
-        if arquivo == '':
-            arquivo = 'database.db';
-        if pasta == '':
-            pasta = './data/';
+class DataBaseSqlite():
+    def __init__(self) -> None:
+        caminho = os.path.dirname(os.path.realpath('~/'));
+        pasta   = os.path.join(caminho,"data");
+        arquivo    = "rastreador.db";
         if(not(os.path.exists(pasta))):
             os.mkdir(pasta);
-        if(not('/data/' in pasta)):
-            self.nome = f'{pasta}/data/';
-            os.mkdir(self.nome);
-            self.nome = f'{self.nome}{arquivo}';
-        else:
-            self.nome = nome;
+        self.nome = os.path.join(pasta,arquivo);
+        self.__create_table();
+        self.__create_index();
     # -----------------------
     # OUTROS
     # -----------------------
-    def conexao(self) -> None:
-        self.connection = sqlite3.connect(self.nome);
-
-    def dif_minutos(self,date1) -> float:
+    def __conexao(self) -> sqlite3.Connection:
+        connection = sqlite3.connect(self.nome);
+        return connection;
+    
+    @staticmethod
+    def __dif_minutos(date1)->float:
         data_agora = datetime.now();
         date2      = data_agora.strftime('%Y-%m-%d %H:%M:%S');
         d1         = datetime.strptime(date1, '%Y-%m-%d %H:%M:%S');
         d2         = datetime.strptime(date2, '%Y-%m-%d %H:%M:%S');
         resultado  = d2-d1;
-        minutes    = resultado.total_seconds();
-        minutes    = float(minutes);
-        return minutes;
+        segundos   = resultado.total_seconds();
+        segundos   = float(segundos);
+        return segundos;
     
-    def creat_table(self,comando:str='') -> None:
-        if(comando == ''):
-            comando =   """ CREATE TABLE IF NOT EXISTS encomenda(
-                            id              INTEGER primary key autoincrement,
-                            id_user         TEXT NOT NULL,
-                            codigo          TEXT NOT NULL,
-                            nome_rastreio   TEXT,
-                            data            TEXT NOT NULL,
-                            informacoes     TEXT NOT NULL)
-                        """;
+    def __create_index(self) -> None:
+        comandos = [
+            # Tabela das mensagem
+            (   " CREATE INDEX IF NOT EXISTS "
+                " index_mensagem_id_user "
+                " ON mensagem(id_user)"),
+            (   " CREATE INDEX IF NOT EXISTS "
+                " index_mensagem_dia "
+                " ON mensagem(dia)"),
+            # Tabela dos CNPJs
+            (   " CREATE INDEX IF NOT EXISTS "
+                " index_cnpj_id_user "
+                " ON cnpj(id_user)"),
+            (   " CREATE INDEX IF NOT EXISTS "
+                " index_cnpj_CNPJ "
+                " ON cnpj(CNPJ)"),
+            (   " CREATE INDEX IF NOT EXISTS "
+                " index_cnpj_status "
+                " ON cnpj(status)"),
+            # Tabela dos CPFs
+            (   " CREATE INDEX IF NOT EXISTS "
+                " index_cpf_id_user "	
+                " ON cpf(id_user)"),
+            (   " CREATE INDEX IF NOT EXISTS "
+                " index_cpf_CPF "
+                " ON cpf(CPF)"),
+            (   " CREATE INDEX IF NOT EXISTS "
+                " index_cpf_status "
+                " ON cpf(status)"),
+            # Tabela das Encomendas
+            (   " CREATE INDEX IF NOT EXISTS "
+                " index_encomenda_id_user "
+                " ON encomenda(id_user)"),
+            (   " CREATE INDEX IF NOT EXISTS "
+                " index_encomenda_codigo "
+                " ON encomenda(codigo)")
+        ];
+        for comando in comandos:
+            self.__execute_create(comando=comando);
+    
+    def __create_table(self) -> None:
+        comandos = [
+            # Tabela das Mensagens
+            (   " CREATE TABLE IF NOT EXISTS mensagem( "
+                " id			INTEGER PRIMARY KEY AUTOINCREMENT, "
+                " id_user 		INTEGER NOT NULL, "
+                " dia 			TEXT	NOT NULL, "
+                " log_mensagem 	TEXT 	NOT NULL) "),
+            # Tabela dos CNPJs
+            (   " CREATE TABLE IF NOT EXISTS cnpj( "
+                " id		INTEGER PRIMARY KEY AUTOINCREMENT, "
+                " id_user 	INTEGER NOT NULL, "
+                " dia 		TEXT	NOT NULL, "
+                " CNPJ		TEXT	NOT NULL, "
+                " status	TEXT	NOT NULL) "),
+            # Tabela dos CPFs
+            (   "CREATE TABLE IF NOT EXISTS cpf( "
+                " id		INTEGER PRIMARY KEY AUTOINCREMENT, "
+                " id_user 	INTEGER NOT NULL, "
+                " dia 		TEXT	NOT NULL, "
+                " CPF		TEXT	NOT NULL, "
+                " status	TEXT	NOT NULL) "),
+            # Tabela das Encomendas
+            (   "CREATE TABLE IF NOT EXISTS encomenda( "
+                " id			INTEGER PRIMARY KEY AUTOINCREMENT, "
+                " id_user 		INTEGER NOT NULL, "
+                " codigo		TEXT	NOT NULL, "
+                " nome_rastreio	TEXT	NOT NULL, "
+                " dia 			TEXT	NOT NULL, "
+                " informacoes   TEXT 	NOT NULL) ")
+        ];
+        for comando in comandos:
+            self.__execute_create(comando=comando);
+        
+    def __execute_create(self,comando:str):
         try:
-            self.conexao();
-            Connection = self.connection;
+            Connection = self.__conexao();
             cursor = Connection.cursor();
             cursor.execute(comando);
             Connection.commit();
@@ -66,32 +127,19 @@ class DataBase():
     # -----------------------
     # CPF
     # -----------------------
-    def creat_table_cpf(self,comando:str='') -> None:
-        if(comando == ''):
-            comando =   """ CREATE TABLE IF NOT EXISTS cpf(
-                            id              INTEGER primary key autoincrement,
-                            id_user         TEXT NOT NULL,
-                            CPF             TEXT NOT NULL,
-                            status          TEXT NOT NULL,
-                            dia             TEXT NOT NULL)
-                        """;
-        self.creat_table(comando=comando);
-    
     def insert_cpf(self,comando:str='',tupla=[]) -> None:
         if(comando == ''):
-            comando =   """ 
-                            INSERT INTO cpf
-                            (id_user, CPF, status, dia)
-                            VALUES(?, ?, ?,(SELECT DATETIME('now','localtime')))
-                        """;
+            comando = ( "INSERT INTO cpf "
+                        "(id_user, CPF, status, dia) "
+                        " VALUES(?, ?, ?, "
+                        " (SELECT DATETIME('now','localtime')))");
         if(tupla == []):
             tupla = ('id_user', 'CPF', 'status', 'dia');
             return;
         if(self.verifica_cpf(id_user=tupla[0],CPF=tupla[1])):
             return;
         try:
-            self.conexao();
-            Connection = self.connection;
+            Connection = self.__conexao();
             cursor = Connection.cursor();
             cursor.execute(comando, tupla);
             Connection.commit();
@@ -104,17 +152,16 @@ class DataBase():
             if Connection:
                 Connection.close();
 
-    def verifica_cpf(self,comando:str='',id_user:str='',CPF:str='') -> bool:
+    def verifica_cpf(   self,comando:str='',id_user:str='',
+                        CPF:str='') -> bool:
         if(id_user == '' or CPF == ''):
             return False;
         if(comando == ''):
-            comando =   f""" 
-                            SELECT * FROM cpf
-                            WHERE id_user='{id_user}' AND CPF LIKE '{CPF}%'
-                        """;
+            comando = ( f"SELECT * FROM cpf "
+                        f"WHERE id_user='{id_user}' "
+                        f"AND CPF LIKE '{CPF}%'");
         try:
-            self.conexao();
-            Connection = self.connection;
+            Connection = self.__conexao();
             cursor = Connection.cursor();
             cursor.execute(comando);
             if cursor.fetchall() != []:
@@ -133,24 +180,12 @@ class DataBase():
     # -----------------------    
     # CNPJ
     # -----------------------
-    def creat_table_cnpj(self,comando:str='') -> None:
-        if(comando == ''):
-            comando =   """ CREATE TABLE IF NOT EXISTS cnpj(
-                            id              INTEGER primary key autoincrement,
-                            id_user         TEXT NOT NULL,
-                            CNPJ            TEXT NOT NULL,
-                            status          TEXT NOT NULL,
-                            dia             TEXT NOT NULL)
-                        """;
-        self.creat_table(comando=comando);
-    
     def insert_cnpj(self,comando:str='',tupla=[]) -> None:
         if(comando == ''):
-            comando =   """ 
-                            INSERT INTO cnpj
-                            (id_user, CNPJ, status, dia)
-                            VALUES(?, ?, ?,(SELECT DATETIME('now','localtime')))
-                        """;
+            comando = ( " INSERT INTO cnpj "
+                        " (id_user, dia, CNPJ, status) "
+                        f" VALUES(?, ?, ?,("
+                        f" SELECT DATETIME('now','localtime')))");
         if(tupla == []):
             tupla = ('id_user', 'CNPJ', 'status', 'dia');
             return;
@@ -158,32 +193,30 @@ class DataBase():
             return;
         self.insert_cpf(comando=comando,tupla=tupla);
 
-    def verifica_cnpj(self,comando:str='',id_user:str='',CNPJ:str='') -> bool:
+    def verifica_cnpj(  self,comando:str='',id_user:str='',
+                        CNPJ:str='') -> bool:
         if(id_user == '' or CNPJ == ''):
             return False;
         if(comando == ''):
-            comando =   f""" 
-                            SELECT * FROM cnpj
-                            WHERE id_user='{id_user}' AND CNPJ LIKE '{CNPJ}%'
-                        """;
-        return self.verifica_cpf(comando=comando,id_user=id_user,CPF=CNPJ);
+            comando = ( f" SELECT * FROM cnpj "
+                        f" WHERE id_user='{id_user}' "
+                        f" AND CNPJ LIKE '{CNPJ}%' ");
+        return self.verifica_cpf(   comando=comando,
+                                    id_user=id_user,CPF=CNPJ);
     # -----------------------    
     # RASTREIO
     # -----------------------
-    def verifica_rastreio(self,comando:str='',id_user:str='',codigo:str='') -> bool:
+    def verifica_rastreio(  self,comando:str='',id_user:str='',
+                            codigo:str='') -> bool:
         if(id_user == '' or codigo == ''):
             return False;
         if(comando == ''):
-            comando =   f""" 
-                            SELECT *
-                            FROM encomenda
-                            WHERE id_user='{id_user}' 
-                            AND
-                            codigo='{codigo}'
-                        """;
+            comando = ( f" SELECT * "
+                        f" FROM encomenda "
+                        f" WHERE id_user='{id_user}' "
+                        f" AND codigo='{codigo}'");
         try:
-            self.conexao();
-            Connection = self.connection;
+            Connection = self.__conexao();
             cursor = Connection.cursor();
             cursor.execute(comando);
             tmp = cursor.fetchall();
@@ -203,18 +236,18 @@ class DataBase():
     
     def insert_rastreio(self,comando:str='',tupla=[]) -> None:
         if(comando == ''):
-            comando =   """ 
-                            INSERT INTO encomenda
-                            (id_user, codigo, nome_rastreio, 'data', informacoes)
-                            VALUES(?, ?, ?,(SELECT DATETIME('now','localtime')), ?)
-                        """;
+            comando = ( " INSERT INTO encomenda "
+                        " (id_user, codigo, nome_rastreio, "
+                        " dia, informacoes) "
+                        f" VALUES(?, ?, ?, "
+                        f" (SELECT DATETIME('now','localtime')), ?)");
         if(tupla == []):
-            tupla = ('id_user','codigo','nome_rastreio','data','informacoes');
+            tupla = (   'id_user','codigo','nome_rastreio',
+                        'dia','informacoes');
         if(self.verifica_rastreio(id_user=tupla[0],codigo=tupla[1])):
             return;
         try:
-            self.conexao();
-            Connection = self.connection;
+            Connection = self.__conexao();
             cursor = Connection.cursor();
             cursor.execute(comando, tupla);
             Connection.commit();
@@ -227,17 +260,16 @@ class DataBase():
             if Connection:
                 Connection.close();
     
-    def delete_rastreio(self,comando:str='',id_user:str='',codigo:str='') -> None:
+    def delete_rastreio(self,comando:str='',id_user:str='',
+                        codigo:str='') -> None:
         if(id_user == '' or codigo == ''):
             return;
         if(comando == ''):
-            comando =   f""" 
-                            DELETE FROM encomenda
-                            WHERE id_user='{id_user}' AND codigo='{codigo}'
-                        """;
+            comando = ( f" DELETE FROM encomenda "
+                        f" WHERE id_user='{id_user}' "
+                        f" AND codigo='{codigo}' ");
         try:
-            self.conexao();
-            Connection = self.connection;
+            Connection = self.__conexao();
             cursor = Connection.cursor();
             cursor.execute(comando);
             Connection.commit();
@@ -252,10 +284,12 @@ class DataBase():
 
     def select_rastreio(self,comando:str='',id_user:str='') -> list:
         if(comando == ''):
-            comando =   f"SELECT informacoes, nome_rastreio, codigo FROM encomenda  WHERE id_user='{id_user}' ORDER BY id";
+            comando = ( f" SELECT informacoes, nome_rastreio, "
+                        f" codigo FROM encomenda  "
+                        f" WHERE id_user='{id_user}' "
+                        f" ORDER BY id DESC ");
         try:
-            self.conexao();
-            Connection = self.connection;
+            Connection = self.__conexao();
             cursor     = Connection.cursor();
             cursor.execute(comando);
             data = cursor.fetchall();
@@ -272,10 +306,12 @@ class DataBase():
     
     def atualiza_rastreio(self,comando:str='') -> list:
         if(comando == ''):
-            comando =   f'SELECT id_user, codigo, informacoes, nome_rastreio FROM encomenda ORDER BY data LIMIT 1';
+            comando = ( f" SELECT id_user, codigo, "
+                        f" informacoes, nome_rastreio "
+                        f" FROM encomenda ORDER BY dia "
+                        f" LIMIT 1 ");
         try:
-            self.conexao();
-            Connection = self.connection;
+            Connection = self.__conexao();
             cursor     = Connection.cursor();
             cursor.execute(comando);
             data = cursor.fetchall();
@@ -299,16 +335,16 @@ class DataBase():
 
     def validar_rastreio(self,comando:str='') -> float:
         if(comando == ''):
-            comando =   f'SELECT data FROM encomenda ORDER BY data LIMIT 1';
+            comando = ( f" SELECT dia FROM encomenda "
+                        f" ORDER BY dia LIMIT 1");
         try:
-            self.conexao();
-            Connection = self.connection;
+            Connection = self.__conexao();
             cursor     = Connection.cursor();
             cursor.execute(comando);
             data = cursor.fetchall();
             if data != []:
                 data = str(data[0][0]);
-                data = self.dif_minutos(data);
+                data = self.__dif_minutos(data);
                 cursor.close();
                 return data;
             cursor.close();
@@ -322,16 +358,17 @@ class DataBase():
             if Connection:
                 Connection.close();
     
-    def update_rastreio(self,id_user:str='',codigo:str='',comando:str='',informacoes:str='') -> bool:
+    def update_rastreio(self,id_user:str='',codigo:str='',
+                        comando:str='',informacoes:str='') -> bool:
         if(comando == ''):
-            comando =   f""" UPDATE encomenda
-                            SET 'data'=(SELECT DATETIME('now','localtime')), 
-                            informacoes='{informacoes}'
-                            WHERE id_user='{id_user}' AND codigo='{codigo}'
-                        """;
+            comando = ( f" UPDATE encomenda "
+                        f" SET dia=(SELECT DATETIME"
+                        f"('now','localtime')), " 
+                        f" informacoes='{informacoes}' "
+                        f" WHERE id_user='{id_user}' "
+                        f" AND codigo='{codigo}'");
         try:
-            self.conexao();
-            Connection = self.connection;
+            Connection = self.__conexao();
             cursor     = Connection.cursor();
             cursor.execute(comando);
             Connection.commit();
@@ -346,29 +383,17 @@ class DataBase():
     # -----------------------
     # Mensagens
     # -----------------------
-    def creat_table_mensagem(self,comando:str='') -> None:
-        if(comando == ''):
-            comando =   """ CREATE TABLE IF NOT EXISTS mensagem(
-                            id              INTEGER primary key autoincrement,
-                            id_user         TEXT NOT NULL,
-                            dia             TEXT NOT NULL,
-                            mensagem        BLOB NOT NULL)
-                        """;
-        self.creat_table(comando=comando);
-
     def insert_mensagem(self,comando:str='',tupla=[]) -> None:
         if(comando == ''):
-            comando =   """ 
-                            INSERT INTO mensagem
-                            (id_user, dia, mensagem)
-                            VALUES(?, (SELECT DATETIME('now','localtime')), ?)
-                        """;
+            comando = ( "INSERT INTO mensagem "
+                        "(id_user, dia, log_mensagem) "
+                        f" VALUES(?, (SELECT DATETIME"
+                        f"('now','localtime')), ?) ");
         if(tupla == []):
             tupla = ('id_user', 'dia', 'mensagem');
             return;
         try:
-            self.conexao();
-            Connection = self.connection;
+            Connection = self.__conexao();
             cursor = Connection.cursor();
             cursor.execute(comando, tupla);
             Connection.commit();
@@ -384,9 +409,5 @@ class DataBase():
 # MAIN()
 #-----------------------
 if(__name__ == "__main__"):
-    db = DataBase();
-    db.creat_table();
-    db.creat_table_cpf();
-    db.creat_table_cnpj();
-    db.creat_table_mensagem();
+    pass;
 #-----------------------

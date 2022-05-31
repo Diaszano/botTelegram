@@ -2,10 +2,8 @@
 # CLASSES
 #-----------------------
 class Verificadores:
-    def __init__(self)->None:
-        pass;
-    
-    def CNPJ(self,cnpj:str = '00.000.000/0000-00') -> bool:
+    @staticmethod
+    def CNPJ(cnpj:str = '00.000.000/0000-00') -> bool:
         cnpjo = [int(char) for char in cnpj if char.isdigit()];
         cnpj  = cnpjo[:12];
         prod  = [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
@@ -22,12 +20,14 @@ class Verificadores:
             return True;
         return False;
     
-    def CPF(self,cpf:str = '000.000.000-00') -> bool:
+    @staticmethod
+    def CPF(cpf:str = '000.000.000-00') -> bool:
         cpf_novo = [int(char) for char in cpf if char.isdigit()];
         if len(cpf_novo) != 11 or cpf_novo == cpf_novo[::-1]:
             return False;
         for i in range(9, 11):
-            valor  = sum((cpf_novo[num] * ((i + 1) - num) for num in range(0, i)));
+            valor  = sum((cpf_novo[num] * 
+                        ((i + 1) - num) for num in range(0, i)));
             digito = ((valor * 10) % 11) % 10;
             if digito != cpf_novo[i]:
                 return False;
