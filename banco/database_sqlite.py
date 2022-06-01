@@ -3,8 +3,14 @@
 # BIBLIOTECAS
 #-----------------------
 import os
+import sys
 import sqlite3
+from typing import Union
+from threading import Lock
 from datetime import datetime
+#-----------------------
+# CONSTANTES
+#-----------------------
 #-----------------------
 # CLASSES
 #-----------------------
@@ -12,29 +18,34 @@ class DataBaseSqlite():
     def __init__(self) -> None:
         caminho = os.path.dirname(os.path.realpath('~/'));
         pasta   = os.path.join(caminho,"data");
-        arquivo    = "rastreador.db";
+        arquivo = "rastreador.db";
         if(not(os.path.exists(pasta))):
             os.mkdir(pasta);
         self.nome = os.path.join(pasta,arquivo);
         self.__create_table();
         self.__create_index();
+        self.lock = Lock();
     # -----------------------
-    # OUTROS
+    # Funções estáticas
     # -----------------------
-    def __conexao(self) -> sqlite3.Connection:
-        connection = sqlite3.connect(self.nome);
-        return connection;
-    
     @staticmethod
-    def __dif_minutos(date1)->float:
+    def __dif_segundos(data:str) -> Union[int,float]:
+        if((data == '') or (not isinstance(data,str))):
+            return -1;
         data_agora = datetime.now();
         date2      = data_agora.strftime('%Y-%m-%d %H:%M:%S');
-        d1         = datetime.strptime(date1, '%Y-%m-%d %H:%M:%S');
-        d2         = datetime.strptime(date2, '%Y-%m-%d %H:%M:%S');
+        d1         = datetime.strptime(data,'%Y-%m-%d %H:%M:%S');
+        d2         = datetime.strptime(date2,'%Y-%m-%d %H:%M:%S');
         resultado  = d2-d1;
         segundos   = resultado.total_seconds();
         segundos   = float(segundos);
         return segundos;
+    # -----------------------
+    # Criação e conexão
+    # -----------------------
+    def __conexao(self) -> sqlite3.Connection:
+        connection = sqlite3.connect(self.nome);
+        return connection;
     
     def __create_index(self) -> None:
         comandos = [
@@ -108,12 +119,62 @@ class DataBaseSqlite():
                 " informacoes   TEXT 	NOT NULL) ")
         ];
         for comando in comandos:
-            self.__execute_create(comando=comando);
+            if(self.__execute_create(comando=comando) == False):
+                sys.exit(0);
         
-    def __execute_create(self,comando:str):
+    def __execute_create(self,comando:str) -> Union[None,bool]:
         try:
             Connection = self.__conexao();
-            cursor = Connection.cursor();
+            cursor     = Connection.cursor();
+            cursor.execute(comando);
+            Connection.commit();
+            cursor.close();
+            return True;
+        except sqlite3.Error as error:
+            print("Falha do comando", error);
+            if Connection:
+                Connection.close();
+            return False;
+    # -----------------------
+    # CRUD
+    # -----------------------
+    # Create
+    def __insert(self,comando:str,tupla:tuple) -> None:
+        self.lock.acquire();
+        try:
+            Connection = self.__conexao();
+            cursor     = Connection.cursor();
+            cursor.execute(comando, tupla);
+            Connection.commit();
+            cursor.close();
+        except sqlite3.Error as error:
+            print("Falha do comando", error);
+            if Connection:
+                Connection.close();
+        self.lock.release();
+    # Read
+    def __select(self,comando:str) -> list:
+        self.lock.acquire();
+        try:
+            Connection = self.__conexao();
+            cursor     = Connection.cursor();
+            cursor.execute(comando);
+            retorno = cursor.fetchall();
+            cursor.close();
+            self.lock.release();
+            return retorno;
+        except sqlite3.Error as error:
+            print("Falha do comando", error);
+            if Connection:
+                Connection.close();
+            self.lock.release();
+            return [];
+    # Update
+    def __update(self,comando:str) -> None:
+        self.lock.acquire();
+        try:
+            Connection = self.__conexao();
+            cursor     = Connection.cursor();
             cursor.execute(comando);
             Connection.commit();
             cursor.close();
@@ -121,290 +182,203 @@ class DataBaseSqlite():
             print("Falha do comando", error);
             if Connection:
                 Connection.close();
-        finally:
+        self.lock.release();
+    # Delete
+    def __delete(self,comando:str) -> None:
+        self.lock.acquire();
+        try:
+            Connection = self.__conexao();
+            cursor     = Connection.cursor();
+            cursor.execute(comando);
+            Connection.commit();
+            cursor.close();
+        except sqlite3.Error as error:
+            print("Falha do comando", error);
             if Connection:
                 Connection.close();
+        self.lock.release();
     # -----------------------
     # CPF
     # -----------------------
-    def insert_cpf(self,comando:str='',tupla=[]) -> None:
-        if(comando == ''):
-            comando = ( "INSERT INTO cpf "
-                        "(id_user, CPF, status, dia) "
-                        " VALUES(?, ?, ?, "
-                        " (SELECT DATETIME('now','localtime')))");
-        if(tupla == []):
-            tupla = ('id_user', 'CPF', 'status', 'dia');
+    def insert_cpf(self,tupla:tuple=[]) -> None:
+        comando = ( " INSERT INTO cpf "
+                    " (id_user, CPF, status, dia) "
+                    " VALUES(?, ?, ?, "
+                    " (SELECT DATETIME('now','localtime')))");
+        if(not isinstance(tupla,tuple)):
             return;
-        if(self.verifica_cpf(id_user=tupla[0],CPF=tupla[1])):
+        elif(len(tupla) != 3):
+            # Exemplo de o que deveria vir
+            # tupla = ('id_user', 'CPF', 'status',);
             return;
-        try:
-            Connection = self.__conexao();
-            cursor = Connection.cursor();
-            cursor.execute(comando, tupla);
-            Connection.commit();
-            cursor.close();
-        except sqlite3.Error as error:
-            print("Falha do comando", error);
-            if Connection:
-                Connection.close();
-        finally:
-            if Connection:
-                Connection.close();
+        id_user = tupla[0];
+        cpf     = tupla[1];
+        if(self.__verifica_cpf(id_user=id_user,cpf=cpf)):
+            return;
+        self.__insert(comando=comando,tupla=tupla);
 
-    def verifica_cpf(   self,comando:str='',id_user:str='',
-                        CPF:str='') -> bool:
-        if(id_user == '' or CPF == ''):
+    def __verifica_cpf(self,id_user:str='',cpf:str='') -> bool:
+        if((id_user == '') or (not isinstance(id_user,str))):
             return False;
-        if(comando == ''):
-            comando = ( f"SELECT * FROM cpf "
-                        f"WHERE id_user='{id_user}' "
-                        f"AND CPF LIKE '{CPF}%'");
-        try:
-            Connection = self.__conexao();
-            cursor = Connection.cursor();
-            cursor.execute(comando);
-            if cursor.fetchall() != []:
-                cursor.close();
-                return True;
-            cursor.close();
+        if((cpf == '') or (not isinstance(cpf,str))):
             return False;
-        except sqlite3.Error as error:
-            print("Falha do comando", error);
-            if Connection:
-                Connection.close();
+        comando = ( f"SELECT * FROM cpf "
+                    f"WHERE id_user='{id_user}' "
+                    f"AND CPF='{cpf}' ");
+        if(self.__select(comando=comando) == []):
             return False;
-        finally:
-            if Connection:
-                Connection.close();
+        return True;
     # -----------------------    
     # CNPJ
     # -----------------------
-    def insert_cnpj(self,comando:str='',tupla=[]) -> None:
-        if(comando == ''):
-            comando = ( " INSERT INTO cnpj "
-                        " (id_user, dia, CNPJ, status) "
-                        f" VALUES(?, ?, ?,("
-                        f" SELECT DATETIME('now','localtime')))");
-        if(tupla == []):
-            tupla = ('id_user', 'CNPJ', 'status', 'dia');
+    def insert_cnpj(self,tupla:tuple=[]) -> None:
+        comando = ( " INSERT INTO cnpj "
+                    " (id_user, dia, CNPJ, status) "
+                    f" VALUES(?, ?, ?,("
+                    f" SELECT DATETIME('now','localtime')))");
+        if(not isinstance(tupla,tuple)):
             return;
-        if(self.verifica_cnpj(id_user=tupla[0],CNPJ=tupla[1])):
+        elif(len(tupla) != 3):
+            # Exemplo de o que deveria vir
+            # tupla = ('id_user', 'CNPJ', 'status',);
             return;
-        self.insert_cpf(comando=comando,tupla=tupla);
-
-    def verifica_cnpj(  self,comando:str='',id_user:str='',
-                        CNPJ:str='') -> bool:
-        if(id_user == '' or CNPJ == ''):
+        id_user = tupla[0];
+        cnpj    = tupla[1];
+        if(self.__verifica_cnpj(id_user=id_user,cnpj=cnpj)):
+            return;
+        self.__insert(comando=comando,tupla=tupla);
+    
+    def __verifica_cnpj(self,id_user:str='',cnpj:str='') -> bool:
+        if((id_user == '') or (not isinstance(id_user,str))):
             return False;
-        if(comando == ''):
-            comando = ( f" SELECT * FROM cnpj "
-                        f" WHERE id_user='{id_user}' "
-                        f" AND CNPJ LIKE '{CNPJ}%' ");
-        return self.verifica_cpf(   comando=comando,
-                                    id_user=id_user,CPF=CNPJ);
+        if((cnpj == '') or (not isinstance(cnpj,str))):
+            return False;
+        comando = ( f" SELECT * FROM cnpj "
+                    f" WHERE id_user='{id_user}' "
+                    f" AND CNPJ='{cnpj}' ");
+        if(self.__select(comando=comando) == []):
+            return False;
+        return True;
     # -----------------------    
     # RASTREIO
     # -----------------------
-    def verifica_rastreio(  self,comando:str='',id_user:str='',
-                            codigo:str='') -> bool:
-        if(id_user == '' or codigo == ''):
-            return False;
-        if(comando == ''):
-            comando = ( f" SELECT * "
-                        f" FROM encomenda "
-                        f" WHERE id_user='{id_user}' "
-                        f" AND codigo='{codigo}'");
-        try:
-            Connection = self.__conexao();
-            cursor = Connection.cursor();
-            cursor.execute(comando);
-            tmp = cursor.fetchall();
-            if tmp != []:
-                cursor.close();
-                return True;
-            cursor.close();
-            return False;
-        except sqlite3.Error as error:
-            print("Falha do comando", error);
-            if Connection:
-                Connection.close();
-            return False;
-        finally:
-            if Connection:
-                Connection.close();
-    
-    def insert_rastreio(self,comando:str='',tupla=[]) -> None:
-        if(comando == ''):
-            comando = ( " INSERT INTO encomenda "
-                        " (id_user, codigo, nome_rastreio, "
-                        " dia, informacoes) "
-                        f" VALUES(?, ?, ?, "
-                        f" (SELECT DATETIME('now','localtime')), ?)");
-        if(tupla == []):
-            tupla = (   'id_user','codigo','nome_rastreio',
-                        'dia','informacoes');
-        if(self.verifica_rastreio(id_user=tupla[0],codigo=tupla[1])):
+    def insert_rastreio(self,tupla:tuple=[]) -> None:
+        comando = ( " INSERT INTO encomenda "
+                    " (id_user, codigo, nome_rastreio, "
+                    " dia, informacoes) "
+                    " VALUES(?, ?, ?, "
+                    " (SELECT DATETIME('now','localtime')), ?)");
+        if(not isinstance(tupla,tuple)):
             return;
-        try:
-            Connection = self.__conexao();
-            cursor = Connection.cursor();
-            cursor.execute(comando, tupla);
-            Connection.commit();
-            cursor.close();
-        except sqlite3.Error as error:
-            print("Falha do comando", error);
-            if Connection:
-                Connection.close();
-        finally:
-            if Connection:
-                Connection.close();
+        elif(len(tupla) != 4):
+            # Exemplo de o que deveria vir
+            # tupla = ( 'id_user',       'codigo',
+            #           'nome_rastreio', 'informacoes');
+            return;
+        id_user = tupla[0];
+        codigo  = tupla[1];
+        if(self.__verifica_rastreio(id_user=id_user,codigo=codigo)):
+            return;
+        self.__insert(comando=comando,tupla=tupla);
     
-    def delete_rastreio(self,comando:str='',id_user:str='',
-                        codigo:str='') -> None:
-        if(id_user == '' or codigo == ''):
+    def __verifica_rastreio(self,id_user:str='',codigo:str='') -> bool:
+        if((id_user == '') or (not isinstance(id_user,str))):
+            return False;
+        if((codigo == '') or (not isinstance(codigo,str))):
+            return False;
+        comando = ( f" SELECT * "
+                    f" FROM encomenda "
+                    f" WHERE id_user='{id_user}' "
+                    f" AND codigo='{codigo}'");
+        if(self.__select(comando=comando) == []):
+            return False;
+        return True;
+    
+    def select_rastreio(self,id_user:str='') -> list:
+        if((id_user == '') or (not isinstance(id_user,str))):
+            return;
+        comando = ( f" SELECT informacoes, nome_rastreio, "
+                    f" codigo FROM encomenda  "
+                    f" WHERE id_user='{id_user}' "
+                    f" ORDER BY id DESC ");
+        self.__select(comando=comando);
+
+    def delete_rastreio(self,id_user:str='',codigo:str='') -> None:
+        if((id_user == '') or (not isinstance(id_user,str))):
+            return;
+        if((codigo == '') or (not isinstance(codigo,str))):
             return;
         if(comando == ''):
             comando = ( f" DELETE FROM encomenda "
                         f" WHERE id_user='{id_user}' "
                         f" AND codigo='{codigo}' ");
-        try:
-            Connection = self.__conexao();
-            cursor = Connection.cursor();
-            cursor.execute(comando);
-            Connection.commit();
-            cursor.close();
-        except sqlite3.Error as error:
-            print("Falha do comando", error);
-            if Connection:
-                Connection.close();
-        finally:
-            if Connection:
-                Connection.close();
-
-    def select_rastreio(self,comando:str='',id_user:str='') -> list:
-        if(comando == ''):
-            comando = ( f" SELECT informacoes, nome_rastreio, "
-                        f" codigo FROM encomenda  "
-                        f" WHERE id_user='{id_user}' "
-                        f" ORDER BY id DESC ");
-        try:
-            Connection = self.__conexao();
-            cursor     = Connection.cursor();
-            cursor.execute(comando);
-            data = cursor.fetchall();
-            cursor.close();
-            return data;
-        except sqlite3.Error as error:
-            print("Falha do comando", error);
-            if Connection:
-                Connection.close();
-                return [];
-        finally:
-            if Connection:
-                Connection.close();
+        self.__delete(comando=comando);
     
-    def atualiza_rastreio(self,comando:str='') -> list:
-        if(comando == ''):
-            comando = ( f" SELECT id_user, codigo, "
-                        f" informacoes, nome_rastreio "
-                        f" FROM encomenda ORDER BY dia "
-                        f" LIMIT 1 ");
-        try:
-            Connection = self.__conexao();
-            cursor     = Connection.cursor();
-            cursor.execute(comando);
-            data = cursor.fetchall();
-            if data != []:
-                id_user = str(data[0][0]);
-                codigo  = str(data[0][1]);
-                info    = str(data[0][2]);
-                nome    = str(data[0][3]);
-                cursor.close();
-                return [id_user,codigo,info,nome];
-            cursor.close();
-            return [];
-        except sqlite3.Error as error:
-            print("Falha do comando", error);
-            if Connection:
-                Connection.close();
-                return [];
-        finally:
-            if Connection:
-                Connection.close();
-
-    def validar_rastreio(self,comando:str='') -> float:
-        if(comando == ''):
-            comando = ( f" SELECT dia FROM encomenda "
-                        f" ORDER BY dia LIMIT 1");
-        try:
-            Connection = self.__conexao();
-            cursor     = Connection.cursor();
-            cursor.execute(comando);
-            data = cursor.fetchall();
-            if data != []:
-                data = str(data[0][0]);
-                data = self.__dif_minutos(data);
-                cursor.close();
-                return data;
-            cursor.close();
-            return -1;
-        except sqlite3.Error as error:
-            print("Falha do comando", error);
-            if Connection:
-                Connection.close();
-                return -1;
-        finally:
-            if Connection:
-                Connection.close();
+    def atualiza_rastreio(self) -> list:
+        comando = ( f" SELECT id_user, codigo, "
+                    f" informacoes, nome_rastreio "
+                    f" FROM encomenda ORDER BY dia "
+                    f" LIMIT 1");
+        dados = self.__select(comando=comando);
+        if(dados != []):
+            id_user = str(dados[0][0]);
+            codigo  = str(dados[0][1]);
+            info    = str(dados[0][2]);
+            nome    = str(dados[0][3]);
+            return [id_user,codigo,info,nome];
+        return [];
     
-    def update_rastreio(self,id_user:str='',codigo:str='',
-                        comando:str='',informacoes:str='') -> bool:
-        if(comando == ''):
-            comando = ( f" UPDATE encomenda "
-                        f" SET dia=(SELECT DATETIME"
-                        f"('now','localtime')), " 
-                        f" informacoes='{informacoes}' "
-                        f" WHERE id_user='{id_user}' "
-                        f" AND codigo='{codigo}'");
-        try:
-            Connection = self.__conexao();
-            cursor     = Connection.cursor();
-            cursor.execute(comando);
-            Connection.commit();
-            cursor.close();
-        except sqlite3.Error as error:
-            print("Falha do comando", error);
-            if Connection:
-                Connection.close();
-        finally:
-            if Connection:
-                Connection.close();
+    def validar_rastreio(self) -> Union[int,float]:
+        comando = ( f" SELECT dia FROM encomenda "
+                    f" ORDER BY dia LIMIT 1");
+        dados = self.__select(comando=comando);
+        if(dados != []):
+            data = str(data[0][0]);
+            dif  = self.__dif_segundos(data);
+            return dif;
+        return -1;
+
+    def update_rastreio(self,tupla:tuple=[]) -> None:
+        if(not isinstance(tupla,tuple)):
+            return;
+        elif(len(tupla) != 3):
+            # Exemplo de o que deveria vir
+            # tupla = ('id_user', 'CPF', 'status',);
+            return;
+        id_user     = tupla[0];
+        codigo      = tupla[1];
+        informacoes = tupla[2];
+        if((id_user == '') or (not isinstance(id_user,str))):
+            return;
+        if((codigo == '') or (not isinstance(codigo,str))):
+            return;
+        if((informacoes == '') or (not isinstance(informacoes,str))):
+            return;
+        comando = ( f" UPDATE encomenda "
+                    f" SET dia=(SELECT DATETIME('now','localtime')), " 
+                    f" informacoes='{informacoes}' "
+                    f" WHERE id_user='{id_user}' "
+                    f" AND codigo='{codigo}'");
+        self.__update(comando=comando);
     # -----------------------
     # Mensagens
     # -----------------------
-    def insert_mensagem(self,comando:str='',tupla=[]) -> None:
-        if(comando == ''):
-            comando = ( "INSERT INTO mensagem "
-                        "(id_user, dia, log_mensagem) "
-                        f" VALUES(?, (SELECT DATETIME"
-                        f"('now','localtime')), ?) ");
-        if(tupla == []):
-            tupla = ('id_user', 'dia', 'mensagem');
+    def insert_mensagem(self,tupla:tuple=[]) -> None:
+        comando = ( " INSERT INTO mensagem "
+                    " (id_user, dia, log_mensagem) "
+                    " VALUES(?, "
+                    " (SELECT DATETIME('now','localtime'))"
+                    " , ?) ");
+        if(not isinstance(tupla,tuple)):
             return;
-        try:
-            Connection = self.__conexao();
-            cursor = Connection.cursor();
-            cursor.execute(comando, tupla);
-            Connection.commit();
-            cursor.close();
-        except sqlite3.Error as error:
-            print("Falha do comando", error);
-            if Connection:
-                Connection.close();
-        finally:
-            if Connection:
-                Connection.close();
+        elif(len(tupla) != 2):
+            # Exemplo de o que deveria vir
+            # tupla = ('id_user', 'mensagem');
+            return;
+        self.__insert(comando=comando,tupla=tupla);
+#-----------------------
+# FUNÇÕES
+#-----------------------
 #-----------------------
 # MAIN()
 #-----------------------

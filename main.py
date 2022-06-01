@@ -38,8 +38,8 @@ def banco(  rastreador:Rastreio,bot:telebot.TeleBot,
         elif((tempo_banco/60) >= TEMPO_MAXIMO):
             dados = db.atualiza_rastreio();
             if(dados != []):
-                id_user          = dados[0];
-                codigo           = dados[1];
+                id_user          = str(dados[0]);
+                codigo           = str(dados[1]);
                 informacoes      = str(dados[2]);
                 nome             = str(dados[3]).title();
                 nova_informacoes = rastreador.rastrear(codigo=codigo);
@@ -50,9 +50,8 @@ def banco(  rastreador:Rastreio,bot:telebot.TeleBot,
                                     f"Encomenda: {codigo} {nome}");
                         bot.send_message(id_user,resposta);
                         informacoes = nova_informacoes;
-                
-                db.update_rastreio( id_user=id_user,codigo=codigo,
-                                    informacoes=informacoes);
+                tupla = (id_user,codigo,informacoes);
+                db.update_rastreio(tupla=tupla);
         else:
             tempo           = TEMPO_MAXIMO * 60;
             tempo_de_espera = tempo - tempo_banco;
@@ -144,11 +143,8 @@ def app(verificador:Verificadores,rastreador:Rastreio,
         resposta = (f"Tu tens "
                     f"{len(db.select_rastreio(id_user=id_user))} "
                     f"encomendas guardadas\n");
-        comando  = (f"SELECT codigo, nome_rastreio "
-                    f"FROM encomenda WHERE id_user="
-                    f"'{id_user}' ORDER BY id");
-        for informacoes, nome in db.select_rastreio(comando=comando):
-            resposta += f"📦 {informacoes} {nome}\n";
+        for _ ,nome ,codigo in db.select_rastreio(id_user=id_user):
+            resposta += f"📦 {codigo} {nome}\n";
         bot.send_message(mensagem.chat.id,resposta);
 
     @bot.message_handler(commands=["deletar","DELETAR"])
@@ -201,7 +197,6 @@ def app(verificador:Verificadores,rastreador:Rastreio,
             tupla = (id_user,cpf,valido);
             
             db.insert_cpf(tupla=tupla);
-            db.insert_cpf(tupla=tupla);
 
             bot.reply_to(mensagem,resposta);
             return;
@@ -212,7 +207,7 @@ def app(verificador:Verificadores,rastreador:Rastreio,
     def cnpj_funcao(mensagem):
         dados   = str(mensagem.text);
         dados   = pegar_digitos(dados);
-        id_user = mensagem.chat.id;
+        id_user = str(mensagem.chat.id);
         tupla   = (id_user,str(mensagem));
         
         db.insert_mensagem(tupla=tupla);
