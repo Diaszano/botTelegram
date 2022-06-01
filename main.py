@@ -12,7 +12,7 @@ from verificador import Verificadores
 #-----------------------
 # CONSTANTES
 #-----------------------
-TEMPO_MAXIMO = 2;
+TEMPO_MAXIMO = 1;
 #-----------------------
 # CLASSES
 #-----------------------
@@ -30,6 +30,7 @@ def banco(  rastreador:Rastreio,bot:telebot.TeleBot,
             db:DataBaseSqlite)->None:
     while True:
         tempo_banco = db.validar_rastreio();
+        print(tempo_banco);
         if((tempo_banco) == -1):
             tempo           = TEMPO_MAXIMO * 60;
             tempo_de_espera = tempo;
@@ -63,9 +64,9 @@ def app(verificador:Verificadores,rastreador:Rastreio,
         bot:telebot.TeleBot,db:DataBaseSqlite)->None:
     @bot.message_handler(commands=["rastrear","RASTREAR"])
     def rastrear(mensagem):
-        dados = mensagem.text;
-        id_user  = mensagem.chat.id;
-        tupla = (id_user,str(mensagem));
+        dados   = str(mensagem.text);
+        id_user = str(mensagem.chat.id);
+        tupla   = (id_user,str(mensagem));
         
         db.insert_mensagem(tupla=tupla);
         regex = (   r'(?P<Codigo>[a-z]{2}[0-9]{9}[a-z]{2})'
@@ -105,6 +106,7 @@ def app(verificador:Verificadores,rastreador:Rastreio,
             resposta = (    f"Infelizmente {nome} "
                             f"{codigo} não foi encontrada.");
             bot.reply_to(mensagem,resposta);
+            informacoes = str(informacoes);
             tupla = (id_user,codigo,nome,informacoes);
 
             db.insert_rastreio(tupla=tupla);
@@ -117,8 +119,8 @@ def app(verificador:Verificadores,rastreador:Rastreio,
     def buscar_encomendas_salvas(mensagem):
         resposta = f"Procurando encomendas";
         bot.reply_to(mensagem,resposta);
-        id_user  = mensagem.chat.id;
-        tupla = (id_user,str(mensagem));
+        id_user = str(mensagem.chat.id);
+        tupla   = (id_user,str(mensagem));
         
         db.insert_mensagem(tupla=tupla);
 
@@ -135,7 +137,7 @@ def app(verificador:Verificadores,rastreador:Rastreio,
     def listar_encomendas(mensagem):
         resposta = f"Procurando encomendas";
         bot.reply_to(mensagem,resposta);
-        id_user  = mensagem.chat.id;
+        id_user  = str(mensagem.chat.id);
         tupla = (id_user,str(mensagem));
         
         db.insert_mensagem(tupla=tupla);
@@ -149,7 +151,7 @@ def app(verificador:Verificadores,rastreador:Rastreio,
 
     @bot.message_handler(commands=["deletar","DELETAR"])
     def deletar_encomendas(mensagem):
-        id_user  = mensagem.chat.id;
+        id_user  = str(mensagem.chat.id);
         tupla = (id_user,str(mensagem));
 
         db.insert_mensagem(tupla=tupla);
@@ -162,10 +164,7 @@ def app(verificador:Verificadores,rastreador:Rastreio,
             codigo   = str(dados).upper();
             resposta = f"Procurando encomenda para remover";
             bot.reply_to(mensagem,resposta);
-            if(db.verifica_rastreio(id_user=id_user,codigo=codigo)):
-                
-                db.delete_rastreio(id_user=id_user,codigo=codigo);
-
+            if(db.delete_rastreio(id_user=id_user,codigo=codigo)):
                 resposta = f"Encomenda Deletada";
                 bot.reply_to(mensagem,resposta);
                 return;
@@ -176,7 +175,7 @@ def app(verificador:Verificadores,rastreador:Rastreio,
     def cpf_funcao(mensagem):
         dados   = str(mensagem.text);
         dados   = pegar_digitos(dados);
-        id_user = mensagem.chat.id;
+        id_user = str(mensagem.chat.id);
         tupla   = (id_user,str(mensagem));
         
         db.insert_mensagem(tupla=tupla);
@@ -234,8 +233,8 @@ def app(verificador:Verificadores,rastreador:Rastreio,
         bot.reply_to(mensagem,resposta);
     
     def verificar(mensagem):
-        id_user  = mensagem.chat.id;
-        tupla = (id_user,str(mensagem));
+        id_user = str(mensagem.chat.id);
+        tupla   = (id_user,str(mensagem));
 
         db.insert_mensagem(tupla=tupla);
         

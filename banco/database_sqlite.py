@@ -301,18 +301,20 @@ class DataBaseSqlite():
                     f" codigo FROM encomenda  "
                     f" WHERE id_user='{id_user}' "
                     f" ORDER BY id DESC ");
-        self.__select(comando=comando);
+        return self.__select(comando=comando);
 
-    def delete_rastreio(self,id_user:str='',codigo:str='') -> None:
+    def delete_rastreio(self,id_user:str='',codigo:str='') -> bool:
         if((id_user == '') or (not isinstance(id_user,str))):
-            return;
+            return False;
         if((codigo == '') or (not isinstance(codigo,str))):
-            return;
-        if(comando == ''):
-            comando = ( f" DELETE FROM encomenda "
-                        f" WHERE id_user='{id_user}' "
-                        f" AND codigo='{codigo}' ");
-        self.__delete(comando=comando);
+            return False;
+        comando = ( f" DELETE FROM encomenda "
+                    f" WHERE id_user='{id_user}' "
+                    f" AND codigo='{codigo}' ");
+        if(self.__verifica_rastreio(id_user=id_user,codigo=codigo)):
+            self.__delete(comando=comando);
+            return True;
+        return False;
     
     def atualiza_rastreio(self) -> list:
         comando = ( f" SELECT id_user, codigo, "
@@ -333,7 +335,7 @@ class DataBaseSqlite():
                     f" ORDER BY dia LIMIT 1");
         dados = self.__select(comando=comando);
         if(dados != []):
-            data = str(data[0][0]);
+            data = str(dados[0][0]);
             dif  = self.__dif_segundos(data);
             return dif;
         return -1;
