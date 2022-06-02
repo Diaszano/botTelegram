@@ -60,46 +60,51 @@ def banco(  rastreador:Rastreio,bot:telebot.TeleBot,
 
 def app(verificador:Verificadores,rastreador:Rastreio,
         bot:telebot.TeleBot,db:DataBaseSqlite)->None:
+    regex = (   r'/rastrear |'
+                r'/listar |'
+                r'/encomendas |'
+                r'/deletar |'
+                r'/cpf |'
+                r'/cnpj ');
+    regex_opcoes = re.compile(regex,re.MULTILINE | re.IGNORECASE);
     
     def verificar(mensagem):
         guardar_mensagens(mensagem);
-        # Rastrear
-        regex = r'(?P<Rastrear>\/rastrear)';
-        if(validar(regex=regex,mensagem=mensagem.text)):
-            rastrear_encomendas(mensagem);
-            return False;
-        # Listar
-        regex = r'(?P<Listar>\/listar)';
-        if(validar(regex=regex,mensagem=mensagem.text)):
-            listar_encomendas(mensagem);
-            return False;
-        # Encomendas
-        regex = r'(?P<Encomendas>\/encomendas)';
-        if(validar(regex=regex,mensagem=mensagem.text)):
-            buscar_encomendas(mensagem);
-            return False;
-        # Deletar
-        regex = r'(?P<Deletar>\/deletar)';
-        if(validar(regex=regex,mensagem=mensagem.text)):
-            deletar_encomendas(mensagem);
-            return False;
-        # CPF
-        regex = r'(?P<CPF>\/cpf)';
-        if(validar(regex=regex,mensagem=mensagem.text)):
-            verificar_cpf(mensagem);
-            return False;
-        # CNPJ
-        regex = r'(?P<CNPJ>\/cnpj)';
-        if(validar(regex=regex,mensagem=mensagem.text)):
-            verificar_cnpj(mensagem);
-            return False;
+        [isTrue,nome] = validar(regex=regex_opcoes,
+                        mensagem=mensagem.text);
+        nome = str(nome).upper();
+        if(isTrue):
+            # Rastrear
+            if(nome == "/Rastrear".upper()):
+                rastrear_encomendas(mensagem);
+                return False;
+            # Listar
+            if(nome == "/Listar".upper()):
+                listar_encomendas(mensagem);
+                return False;
+            # Encomendas
+            if(nome == "/Encomendas".upper()):
+                buscar_encomendas(mensagem);
+                return False;
+            # Deletar
+            if(nome == "/Deletar".upper()):
+                deletar_encomendas(mensagem);
+                return False;
+            # CPF
+            if(nome == "/CPF".upper()):
+                verificar_cpf(mensagem);
+                return False;
+            # CNPJ
+            if(nome == "/CNPJ".upper()):
+                verificar_cnpj(mensagem);
+                return False;
         return True;
     
-    def validar(regex:str,mensagem) -> bool:
-        dados = re.findall(regex,mensagem,re.MULTILINE | re.IGNORECASE);
+    def validar(regex:re,mensagem) -> list:
+        dados = regex.findall(mensagem);
         if(dados == []):
-            return False;
-        return True;
+            return [False,''];
+        return [True,dados[0]];
 
     def rastrear_encomendas(mensagem):
         dados   = str(mensagem.text);
