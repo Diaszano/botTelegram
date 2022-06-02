@@ -12,14 +12,14 @@ from verificador import Verificadores
 #-----------------------
 # CONSTANTES
 #-----------------------
-TEMPO_MAXIMO = 1;
+TEMPO_MAXIMO = 2;
 #-----------------------
 # CLASSES
 #-----------------------
 #-----------------------
-# FUNÇÕES()
+# FUNÇÕES
 #-----------------------
-def pegar_digitos(mensagem:str):
+def pegar_digitos(mensagem:str) -> str:
     temp = '';
     for caracter in mensagem:
         if(caracter.isdigit()):
@@ -30,8 +30,7 @@ def banco(  rastreador:Rastreio,bot:telebot.TeleBot,
             db:DataBaseSqlite)->None:
     while True:
         tempo_banco = db.validar_rastreio();
-        print(tempo_banco);
-        if((tempo_banco) == -1):
+        if(tempo_banco == -1):
             tempo           = TEMPO_MAXIMO * 60;
             tempo_de_espera = tempo;
             if tempo_de_espera > 0:
@@ -56,19 +55,56 @@ def banco(  rastreador:Rastreio,bot:telebot.TeleBot,
         else:
             tempo           = TEMPO_MAXIMO * 60;
             tempo_de_espera = tempo - tempo_banco;
-            if tempo_de_espera > 0:
+            if(tempo_de_espera > 0):
                 time.sleep(tempo_de_espera);
-        time.sleep(1);
 
 def app(verificador:Verificadores,rastreador:Rastreio,
         bot:telebot.TeleBot,db:DataBaseSqlite)->None:
-    @bot.message_handler(commands=["rastrear","RASTREAR"])
-    def rastrear(mensagem):
+    
+    def verificar(mensagem):
+        guardar_mensagens(mensagem);
+        # Rastrear
+        regex = r'(?P<Rastrear>\/rastrear)';
+        if(validar(regex=regex,mensagem=mensagem.text)):
+            rastrear_encomendas(mensagem);
+            return False;
+        # Listar
+        regex = r'(?P<Listar>\/listar)';
+        if(validar(regex=regex,mensagem=mensagem.text)):
+            listar_encomendas(mensagem);
+            return False;
+        # Encomendas
+        regex = r'(?P<Encomendas>\/encomendas)';
+        if(validar(regex=regex,mensagem=mensagem.text)):
+            buscar_encomendas(mensagem);
+            return False;
+        # Deletar
+        regex = r'(?P<Deletar>\/deletar)';
+        if(validar(regex=regex,mensagem=mensagem.text)):
+            deletar_encomendas(mensagem);
+            return False;
+        # CPF
+        regex = r'(?P<CPF>\/cpf)';
+        if(validar(regex=regex,mensagem=mensagem.text)):
+            verificar_cpf(mensagem);
+            return False;
+        # CNPJ
+        regex = r'(?P<CNPJ>\/cnpj)';
+        if(validar(regex=regex,mensagem=mensagem.text)):
+            verificar_cnpj(mensagem);
+            return False;
+        return True;
+    
+    def validar(regex:str,mensagem) -> bool:
+        dados = re.findall(regex,mensagem,re.MULTILINE | re.IGNORECASE);
+        if(dados == []):
+            return False;
+        return True;
+
+    def rastrear_encomendas(mensagem):
         dados   = str(mensagem.text);
         id_user = str(mensagem.chat.id);
-        tupla   = (id_user,str(mensagem));
-        
-        db.insert_mensagem(tupla=tupla);
+
         regex = (   r'(?P<Codigo>[a-z]{2}[0-9]{9}[a-z]{2})'
                     r'(?:\n)*(?:.[^a-z0-9])*(?:\s)*(?:\n)*'
                     r'(?P<Nome>.{1,30})*(?:\n)*');
@@ -89,7 +125,6 @@ def app(verificador:Verificadores,rastreador:Rastreio,
             else:
                 codigo   = dados[0];
                 nome     = str(dados[1]).title();
-
             codigo   = str(codigo).upper();
             resposta = f"Procurando encomenda";
             bot.reply_to(mensagem,resposta);
@@ -99,31 +134,23 @@ def app(verificador:Verificadores,rastreador:Rastreio,
                 bot.reply_to(mensagem,resposta);
                 # ('id_user','codigo','nome_rastreio','informacoes');
                 tupla = (id_user,codigo,nome,informacoes);
-                
                 db.insert_rastreio(tupla=tupla);
-
                 return;
             resposta = (    f"Infelizmente {nome} "
                             f"{codigo} não foi encontrada.");
             bot.reply_to(mensagem,resposta);
             informacoes = str(informacoes);
             tupla = (id_user,codigo,nome,informacoes);
-
             db.insert_rastreio(tupla=tupla);
-
             return;
         resposta = f"Dados Inválidos";
         bot.reply_to(mensagem,resposta);
     
-    @bot.message_handler(commands=["encomendas","ENCOMENDAS"])
-    def buscar_encomendas_salvas(mensagem):
+    def buscar_encomendas(mensagem):
         resposta = f"Procurando encomendas";
         bot.reply_to(mensagem,resposta);
-        id_user = str(mensagem.chat.id);
-        tupla   = (id_user,str(mensagem));
-        
-        db.insert_mensagem(tupla=tupla);
 
+        id_user  = str(mensagem.chat.id);
         resposta = (f"Tu tens 📦 "
                     f"{len(db.select_rastreio(id_user=id_user))} "
                     f"encomendas guardadas");
@@ -131,34 +158,24 @@ def app(verificador:Verificadores,rastreador:Rastreio,
         for informacoes, nome, codigo in db.select_rastreio(
                                             id_user=id_user):
             resposta = f"{informacoes}Encomenda: {codigo} {nome}";
-            bot.reply_to(mensagem,resposta);
-
-    @bot.message_handler(commands=["LISTAR","listar"])
+            bot.send_message(id_user,resposta);
+    
     def listar_encomendas(mensagem):
         resposta = f"Procurando encomendas";
         bot.reply_to(mensagem,resposta);
         id_user  = str(mensagem.chat.id);
-        tupla = (id_user,str(mensagem));
-        
-        db.insert_mensagem(tupla=tupla);
-
         resposta = (f"Tu tens "
                     f"{len(db.select_rastreio(id_user=id_user))} "
                     f"encomendas guardadas\n");
         for _ ,nome ,codigo in db.select_rastreio(id_user=id_user):
             resposta += f"📦 {codigo} {nome}\n";
         bot.send_message(mensagem.chat.id,resposta);
-
-    @bot.message_handler(commands=["deletar","DELETAR"])
+    
     def deletar_encomendas(mensagem):
-        id_user  = str(mensagem.chat.id);
-        tupla = (id_user,str(mensagem));
-
-        db.insert_mensagem(tupla=tupla);
-        
-        dados = mensagem.text;
-        regex = r'(?P<Codigo>[a-z]{2}[0-9]{9}[a-z]{2})';
-        dados = re.findall(regex,dados,re.MULTILINE | re.IGNORECASE);
+        id_user = str(mensagem.chat.id);
+        dados   = mensagem.text;
+        regex   = r'(?P<Codigo>[a-z]{2}[0-9]{9}[a-z]{2})';
+        dados   = re.findall(regex,dados,re.MULTILINE | re.IGNORECASE);
         if(dados != []):
             dados    = dados[0];
             codigo   = str(dados).upper();
@@ -168,21 +185,20 @@ def app(verificador:Verificadores,rastreador:Rastreio,
                 resposta = f"Encomenda Deletada";
                 bot.reply_to(mensagem,resposta);
                 return;
+            else:
+                resposta = f"Encomenda não existente";
+                bot.reply_to(mensagem,resposta);
+                return;
         resposta = f"Dados Inválidos";
         bot.reply_to(mensagem,resposta);
-
-    @bot.message_handler(commands=["cpf","CPF"])
-    def cpf_funcao(mensagem):
+    
+    def verificar_cpf(mensagem):
         dados   = str(mensagem.text);
         dados   = pegar_digitos(dados);
         id_user = str(mensagem.chat.id);
-        tupla   = (id_user,str(mensagem));
-        
-        db.insert_mensagem(tupla=tupla);
 
         regex = r'(?P<CPF_sem_pontos>[0-9]{11})(?:\n)*'; 
         dados = re.findall(regex,dados,re.MULTILINE | re.IGNORECASE);
-
         if(dados != []):
             cpf    = dados[0];
             cpf    = str(cpf);
@@ -194,23 +210,17 @@ def app(verificador:Verificadores,rastreador:Rastreio,
                 resposta = f"O cpf é inválido";
                 valido   = f'False';
             tupla = (id_user,cpf,valido);
-            
             db.insert_cpf(tupla=tupla);
-
             bot.reply_to(mensagem,resposta);
             return;
         resposta = f"Infelizmente solicitação inválida";
         bot.reply_to(mensagem,resposta);
     
-    @bot.message_handler(commands=["cnpj","CNPJ"])
-    def cnpj_funcao(mensagem):
+    def verificar_cnpj(mensagem):
         dados   = str(mensagem.text);
         dados   = pegar_digitos(dados);
         id_user = str(mensagem.chat.id);
-        tupla   = (id_user,str(mensagem));
         
-        db.insert_mensagem(tupla=tupla);
-
         regex = r'(?P<CNPJ_sem_pontos>[0-9]{14})(?:\n)*';
         dados = re.findall(regex,dados,re.MULTILINE | re.IGNORECASE);
         if(dados != []):
@@ -224,21 +234,16 @@ def app(verificador:Verificadores,rastreador:Rastreio,
                 resposta = f"O cnpj é inválido";
                 valido   = f'False';
             tupla = (id_user,cnpj,valido);
-
             db.insert_cnpj(tupla=tupla);
-            
             bot.reply_to(mensagem,resposta);
             return;
         resposta = f"Infelizmente solicitação inválida";
         bot.reply_to(mensagem,resposta);
-    
-    def verificar(mensagem):
+
+    def guardar_mensagens(mensagem):
         id_user = str(mensagem.chat.id);
         tupla   = (id_user,str(mensagem));
-
         db.insert_mensagem(tupla=tupla);
-        
-        return True;
 
     @bot.message_handler(func=verificar)
     def responder(mensagem):
