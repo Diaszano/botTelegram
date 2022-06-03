@@ -60,12 +60,12 @@ def banco(  rastreador:Rastreio,bot:telebot.TeleBot,
 
 def app(verificador:Verificadores,rastreador:Rastreio,
         bot:telebot.TeleBot,db:DataBaseSqlite)->None:
-    regex = (   r'/rastrear |'
-                r'/listar |'
-                r'/encomendas |'
-                r'/deletar |'
-                r'/cpf |'
-                r'/cnpj ');
+    regex = (   r'/rastrear|'
+                r'/listar|'
+                r'/encomendas|'
+                r'/deletar|'
+                r'/cpf|'
+                r'/cnpj');
     regex_opcoes = re.compile(regex,re.MULTILINE | re.IGNORECASE);
     
     def verificar(mensagem):
@@ -101,7 +101,9 @@ def app(verificador:Verificadores,rastreador:Rastreio,
         return True;
     
     def validar(regex:re,mensagem) -> list:
+        print(mensagem)
         dados = regex.findall(mensagem);
+        print(dados)
         if(dados == []):
             return [False,''];
         return [True,dados[0]];
