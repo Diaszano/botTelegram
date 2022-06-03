@@ -3,6 +3,8 @@
 # BIBLIOTECAS
 #-----------------------
 import mysql.connector
+from typing import Union
+from threading import Lock
 #-----------------------
 # CONSTANTES
 #-----------------------
@@ -10,18 +12,16 @@ import mysql.connector
 # CLASSES
 #-----------------------
 class DataBaseMariaDB():
-    # def __new__(cls, *args, **kwargs):
-    #     if not hasattr(cls, '__is_alive'):
-    #         cls.__is_alive = super().__new__(cls,*args, **kwargs);
-    #     return cls.__is_alive;
-
     def __init__(   self,host:str='',user:str='',
                     password:str='',database:str='')->None:
         self.__host     = host;
         self.__user     = user;
         self.__password = password;
         self.__database = database;
-    
+        self.lock = Lock();
+    # -----------------------
+    # Criação e conexão
+    # -----------------------
     def __conexao(self,host:str='',user:str='',
                 password:str='',database:str='')->list:
         if(host != ''):
@@ -48,18 +48,11 @@ class DataBaseMariaDB():
             cursor = cnxn.cursor();
             return [cnxn,cursor];
     # -----------------------
-    # CPF
+    # CRUD
     # -----------------------
-    def insert_cpf(self,comando:str='',tupla=[]) -> None:
-        if(comando == ''):
-            comando = ( "INSERT INTO cpf "
-                        "(id_user, dia, CPF, status) "
-                        "VALUES(%s,now(),%s,%s) ");
-        if(tupla == []):
-            tupla = ('id_user', 'CPF', 'status', 'dia');
-            return;
-        if(self.__verifica_cpf(id_user=tupla[0],CPF=tupla[1])):
-            return;
+    # Create
+    def __insert(self,comando:str,tupla:tuple) -> None:
+        self.lock.acquire();
         try:
             [cnxn,cursor] = self.__conexao();
             cursor.execute(comando, tupla);
@@ -67,205 +60,220 @@ class DataBaseMariaDB():
             cursor.close();
         except mysql.connector.Error as error:
             print("Falha do comando", error);
-            
-    def __verifica_cpf( self,comando:str='',id_user:str=''
-                        ,CPF:str='') -> bool:
-        if(id_user == '' or CPF == ''):
-            return False;
-        if(comando == ''):
-            comando = ( f"SELECT * FROM cpf "
-                        f"WHERE id_user='{id_user}' "
-                        f"AND CPF LIKE '{CPF}%'");
+        self.lock.release();
+    # Read
+    def __select(self,comando:str) -> list:
+        self.lock.acquire();
+        retorno:list = [];
         try:
             [cnxn,cursor] = self.__conexao();
             cursor.execute(comando);
-            if cursor.fetchall() != []:
-                cursor.close();
-                return True;
+            retorno = cursor.fetchall();
             cursor.close();
-            return False;
         except mysql.connector.Error as error:
             print("Falha do comando", error);
+        self.lock.release();
+        return retorno;
+    # Update
+    def __update(self,comando:str) -> None:
+        self.lock.acquire();
+        try:
+            [cnxn,cursor] = self.__conexao();
+            cursor.execute(comando);
+            cnxn.commit();
+            cursor.close();
+        except mysql.connector.Error as error:
+            print("Falha do comando", error);
+        self.lock.release();
+    # Delete
+    def __delete(self,comando:str) -> None:
+        self.lock.acquire();
+        try:
+            [cnxn,cursor] = self.__conexao();
+            cursor.execute(comando);
+            cnxn.commit();
+            cursor.close();
+        except mysql.connector.Error as error:
+            print("Falha do comando", error);
+        self.lock.release();
+    # -----------------------
+    # CPF
+    # -----------------------
+    def insert_cpf(self,tupla:tuple=[]) -> None:
+        comando = ( "INSERT INTO cpf "
+                    "(id_user, dia, CPF, status) "
+                    "VALUES(%s,now(),%s,%s) ");
+        if(not isinstance(tupla,tuple)):
+            return;
+        elif(len(tupla) != 3):
+            # Exemplo de o que deveria vir
+            # tupla = ('id_user', 'CPF', 'status',);
+            return;
+        id_user = tupla[0];
+        cpf     = tupla[1];
+        if(self.__verifica_cpf(id_user=id_user,cpf=cpf)):
+            return;
+        self.__insert(comando=comando,tupla=tupla);
+
+    def __verifica_cpf(self,id_user:str='',cpf:str='') -> bool:
+        if((id_user == '') or (not isinstance(id_user,str))):
             return False;
+        if((cpf == '') or (not isinstance(cpf,str))):
+            return False;
+        comando = ( f"SELECT * FROM cpf "
+                    f"WHERE id_user='{id_user}' "
+                    f"AND CPF='{cpf}' ");
+        if(self.__select(comando=comando) == []):
+            return False;
+        return True;
     # -----------------------    
     # CNPJ
     # -----------------------
-    def insert_cnpj(self,comando:str='',tupla=[]) -> None:
-        if(comando == ''):
-            comando = ( " INSERT INTO cnpj "
-                        " (id_user, dia, CNPJ, status) "
-                        " VALUES(%s,now(),%s,%s)");
-        if(tupla == []):
-            tupla = ('id_user', 'CNPJ', 'status', 'dia');
+    def insert_cnpj(self,tupla:tuple=[]) -> None:
+        comando = ( " INSERT INTO cnpj "
+                    " (id_user, dia, CNPJ, status) "
+                    " VALUES(%s,now(),%s,%s)");
+        if(not isinstance(tupla,tuple)):
             return;
-        if(self.__verifica_cnpj(id_user=tupla[0],CNPJ=tupla[1])):
+        elif(len(tupla) != 3):
+            # Exemplo de o que deveria vir
+            # tupla = ('id_user', 'CNPJ', 'status',);
             return;
-        self.insert_cpf(comando=comando,tupla=tupla);
-
-    def __verifica_cnpj(self,comando:str='',id_user:str='',
-                        CNPJ:str='') -> bool:
-        if(id_user == '' or CNPJ == ''):
+        id_user = tupla[0];
+        cnpj    = tupla[1];
+        if(self.__verifica_cnpj(id_user=id_user,cnpj=cnpj)):
+            return;
+        self.__insert(comando=comando,tupla=tupla);
+    
+    def __verifica_cnpj(self,id_user:str='',cnpj:str='') -> bool:
+        if((id_user == '') or (not isinstance(id_user,str))):
             return False;
-        if(comando == ''):
-            comando = ( f" SELECT * FROM cnpj "
-                        f" WHERE id_user='{id_user}' "
-                        f" AND CNPJ LIKE '{CNPJ}%' ");
-        return self.__verifica_cpf( comando=comando,id_user=id_user,
-                                    CPF=CNPJ);
+        if((cnpj == '') or (not isinstance(cnpj,str))):
+            return False;
+        comando = ( f" SELECT * FROM cnpj "
+                    f" WHERE id_user='{id_user}' "
+                    f" AND CNPJ='{cnpj}' ");
+        if(self.__select(comando=comando) == []):
+            return False;
+        return True;
     # -----------------------    
     # RASTREIO
     # -----------------------
-    def verifica_rastreio(  self,comando:str='',id_user:str='',
-                            codigo:str='') -> bool:
-        if(id_user == '' or codigo == ''):
-            return False;
-        if(comando == ''):
-            comando = ( f" SELECT * "
-                        f" FROM encomenda "
-                        f" WHERE id_user='{id_user}' "
-                        f" AND codigo='{codigo}'");
-        try:
-            [cnxn,cursor] = self.__conexao();
-            cursor.execute(comando);
-            tmp = cursor.fetchall();
-            if tmp != []:
-                cursor.close();
-                return True;
-            cursor.close();
-            return False;
-        except mysql.connector.Error as error:
-            print("Falha do comando", error);
-            return False;
+    def insert_rastreio(self,tupla:tuple=[]) -> None:
+        comando = ( " INSERT INTO encomenda "
+                    " (id_user, codigo, nome_rastreio, "
+                    " dia, informacoes) VALUES(%s,%s,%s, "
+                    " now(),%s)");
+        if(not isinstance(tupla,tuple)):
+            return;
+        elif(len(tupla) != 4):
+            # Exemplo de o que deveria vir
+            # tupla = ( 'id_user',       'codigo',
+            #           'nome_rastreio', 'informacoes');
+            return;
+        id_user = tupla[0];
+        codigo  = tupla[1];
+        if(self.__verifica_rastreio(id_user=id_user,codigo=codigo)):
+            return;
+        self.__insert(comando=comando,tupla=tupla);
     
-    def insert_rastreio(self,comando:str='',tupla=[]) -> None:
-        if(comando == ''):
-            comando = ( " INSERT INTO encomenda "
-                        " (id_user, codigo, nome_rastreio, "
-                        " dia, informacoes) VALUES(%s,%s,%s, "
-                        " now(),%s)");
-        if(tupla == []):
-            tupla = (   'id_user','codigo','nome_rastreio',
-                        'dia','informacoes');
-        if(self.verifica_rastreio(id_user=tupla[0],codigo=tupla[1])):
-            return;
-        try:
-            [cnxn,cursor] = self.__conexao();
-            cursor.execute(comando, tupla);
-            cnxn.commit();
-            cursor.close();
-        except mysql.connector.Error as error:
-            print("Falha do comando", error);
-            
-    def delete_rastreio(self,comando:str='',id_user:str='',
-                        codigo:str='') -> None:
-        if(id_user == '' or codigo == ''):
-            return;
-        if(comando == ''):
-            comando = ( f" DELETE FROM encomenda "
-                        f" WHERE id_user='{id_user}' "
-                        f" AND codigo='{codigo}' ");
-        try:
-            [cnxn,cursor] = self.__conexao();
-            cursor.execute(comando);
-            cnxn.commit();
-            cursor.close();
-        except mysql.connector.Error as error:
-            print("Falha do comando", error);
+    def __verifica_rastreio(self,id_user:str='',codigo:str='') -> bool:
+        if((id_user == '') or (not isinstance(id_user,str))):
+            return False;
+        if((codigo == '') or (not isinstance(codigo,str))):
+            return False;
+        comando = ( f" SELECT * "
+                    f" FROM encomenda "
+                    f" WHERE id_user='{id_user}' "
+                    f" AND codigo='{codigo}'");
+        if(self.__select(comando=comando) == []):
+            return False;
+        return True;
+    
+    def select_rastreio(self,id_user:str='') -> list:
+        if((id_user == '') or (not isinstance(id_user,str))):
+            return [];
+        comando = ( f" SELECT informacoes, nome_rastreio, "
+                    f" codigo FROM encomenda  "
+                    f" WHERE id_user='{id_user}' "
+                    f" ORDER BY id DESC ");
+        return self.__select(comando=comando);
 
-    def select_rastreio(self,comando:str='',id_user:str='') -> list:
-        if(comando == ''):
-            comando = ( f" SELECT informacoes, nome_rastreio, "
-                        f" codigo FROM encomenda  "
-                        f" WHERE id_user='{id_user}' "
-                        f" ORDER BY id DESC ");
-        try:
-            [cnxn,cursor] = self.__conexao();
-            cursor.execute(comando);
-            data = cursor.fetchall();
-            cursor.close();
+    def delete_rastreio(self,id_user:str='',codigo:str='') -> bool:
+        if((id_user == '') or (not isinstance(id_user,str))):
+            return False;
+        if((codigo == '') or (not isinstance(codigo,str))):
+            return False;
+        comando = ( f" DELETE FROM encomenda "
+                    f" WHERE id_user='{id_user}' "
+                    f" AND codigo='{codigo}' ");
+        if(self.__verifica_rastreio(id_user=id_user,codigo=codigo)):
+            self.__delete(comando=comando);
+            return True;
+        return False;
+    
+    def atualiza_rastreio(self) -> list:
+        comando = ( f" SELECT id_user, codigo, "
+                    f" informacoes, nome_rastreio "
+                    f" FROM encomenda ORDER BY dia "
+                    f" LIMIT 1");
+        dados = self.__select(comando=comando);
+        if(dados != []):
+            id_user = str(dados[0][0]);
+            codigo  = str(dados[0][1]);
+            info    = str(dados[0][2]);
+            nome    = str(dados[0][3]);
+            return [id_user,codigo,info,nome];
+        return [];
+    
+    def validar_rastreio(self) -> Union[int,float]:
+        comando = ( f" SELECT TIMESTAMPDIFF(SECOND, dia,NOW()) "
+                    f" from encomenda "
+                    f" ORDER BY dia LIMIT 1 ");
+        dados = self.__select(comando=comando);
+        if(dados != []):
+            data = float(dados[0][0]);
             return data;
-        except mysql.connector.Error as error:
+        return -1;
 
-            print("Falha do comando", error);
-            return [];
-    
-    def atualiza_rastreio(self,comando:str='') -> list:
-        if(comando == ''):
-            comando = ( f" SELECT id_user, codigo, "
-                        f" informacoes, nome_rastreio "
-                        f" FROM encomenda ORDER BY dia "
-                        f" LIMIT 1 ");
-        try:
-            [cnxn,cursor] = self.__conexao();
-            cursor.execute(comando);
-            data = cursor.fetchall();
-            if data != []:
-                id_user = str(data[0][0]);
-                codigo  = str(data[0][1]);
-                info    = str(data[0][2]);
-                nome    = str(data[0][3]);
-                cursor.close();
-                return [id_user,codigo,info,nome];
-            cursor.close();
-            return [];
-        except mysql.connector.Error as error:
-            print("Falha do comando", error);
-            return [];
-
-    def validar_rastreio(self,comando:str='') -> float:
-        if(comando == ''):
-            comando = ( f" SELECT TIMESTAMPDIFF(SECOND, dia,NOW()) "
-                        f" from encomenda "
-                        f" ORDER BY dia LIMIT 1 ");
-        try:
-            [cnxn,cursor] = self.__conexao();
-            cursor.execute(comando);
-            data = cursor.fetchall();
-            if data != []:
-                data = float(data[0][0]);
-                cursor.close();
-                return data;
-            cursor.close();
-            return -1;
-        except mysql.connector.Error as error:
-            print("Falha do comando", error);
-            return -1;
-    
-    def update_rastreio(self,id_user:str='',codigo:str='',
-                        comando:str='',informacoes:str='') -> bool:
-        if(comando == ''):
-            comando = ( f" UPDATE encomenda "
-                        f" SET dia=now(), " 
-                        f" informacoes='{informacoes}' "
-                        f" WHERE id_user='{id_user}' "
-                        f" AND codigo='{codigo}' ");
-        try:
-            [cnxn,cursor] = self.__conexao();
-            cursor.execute(comando);
-            cnxn.commit();
-            cursor.close();
-        except mysql.connector.Error as error:
-            print("Falha do comando", error);
+    def update_rastreio(self,tupla:tuple=[]) -> None:
+        if(not isinstance(tupla,tuple)):
+            return;
+        elif(len(tupla) != 3):
+            # Exemplo de o que deveria vir
+            # tupla = ('id_user', 'CPF', 'status',);
+            return;
+        id_user     = tupla[0];
+        codigo      = tupla[1];
+        informacoes = tupla[2];
+        if((id_user == '') or (not isinstance(id_user,str))):
+            return;
+        if((codigo == '') or (not isinstance(codigo,str))):
+            return;
+        if((informacoes == '') or (not isinstance(informacoes,str))):
+            return;
+        comando = ( f" UPDATE encomenda "
+                    f" SET dia=now(), " 
+                    f" informacoes='{informacoes}' "
+                    f" WHERE id_user='{id_user}' "
+                    f" AND codigo='{codigo}'");
+        self.__update(comando=comando);
     # -----------------------
     # Mensagens
     # -----------------------
-    def insert_mensagem(self,comando:str='',tupla=[]) -> None:
-        if(comando == ''):
-            comando = ( "INSERT INTO mensagem "
-                        "(id_user, dia, log_mensagem) "
-                        "VALUES(%s,now(),%s) ");
-        if(tupla == []):
-            tupla = ('id_user', 'dia', 'mensagem');
+    def insert_mensagem(self,tupla:tuple=[]) -> None:
+        comando = ( "INSERT INTO mensagem "
+                    "(id_user, dia, log_mensagem) "
+                    "VALUES(%s,now(),%s) ");
+        if(not isinstance(tupla,tuple)):
             return;
-        try:
-            [cnxn,cursor] = self.__conexao();
-            cursor.execute(comando, params=tupla);
-            cnxn.commit();
-            cursor.close();
-        except mysql.connector.Error as error:
-            print("Falha do comando", error);
+        elif(len(tupla) != 2):
+            # Exemplo de o que deveria vir
+            # tupla = ('id_user', 'mensagem');
+            return;
+        self.__insert(comando=comando,tupla=tupla);
 #-----------------------
-# FUNÇÕES()
+# FUNÇÕES
 #-----------------------
 #-----------------------
 # MAIN()
