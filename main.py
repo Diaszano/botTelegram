@@ -2,6 +2,7 @@
 # BIBLIOTECAS
 #-----------------------
 import re
+import sys
 import time
 import telebot
 import threading
@@ -9,13 +10,12 @@ from login import senhas
 from datetime import datetime
 from rastreador import Rastreio
 from verificador import Verificadores
-from banco import DataBaseSqlite as lite
-from banco import DataBaseMariaDB as maria
+from banco import DataBaseSqlite as Sqlite
+from banco import DataBaseMariaDB as MariaDB
 #-----------------------
 # CONSTANTES
 #-----------------------
 HORA = 20;
-BKP_TOTAL = True; # Se quer salvar até as exclusões deixa o True
 TEMPO_MAXIMO = 2;
 #-----------------------
 # CLASSES
@@ -24,14 +24,14 @@ TEMPO_MAXIMO = 2;
 # FUNÇÕES
 #-----------------------
 def pegar_digitos(mensagem:str):
-    temp = '';
+    temp:str = '';
     for caracter in mensagem:
         if(caracter.isdigit()):
             temp += caracter;
     return temp;
 
-def hora_do_remedio(bot:telebot.TeleBot) -> None:
-    isTrue = True;
+def hora_do_remedio(bot:telebot.TeleBot,db:MariaDB) -> None:
+    isTrue:bool = True;
     while True:
         hora = int(datetime.today().strftime('%H'));
         if(hora == HORA and isTrue):
@@ -46,7 +46,7 @@ def hora_do_remedio(bot:telebot.TeleBot) -> None:
         time.sleep(30);
 
 def banco(  rastreador:Rastreio,bot:telebot.TeleBot,
-            db:maria,bkp:lite)->None:
+            db:MariaDB,bkp:Sqlite)->None:
     while True:
         tempo_banco = db.validar_rastreio();
         if(tempo_banco == -1):
@@ -79,7 +79,7 @@ def banco(  rastreador:Rastreio,bot:telebot.TeleBot,
                 time.sleep(tempo_de_espera);
 
 def app(verificador:Verificadores,rastreador:Rastreio,
-        bot:telebot.TeleBot,db:maria,bkp:lite)->None:
+        bot:telebot.TeleBot,db:MariaDB,bkp:Sqlite)->None:
     regex = (   r'/rastrear|'
                 r'/listar|'
                 r'/encomendas|'
@@ -209,8 +209,7 @@ def app(verificador:Verificadores,rastreador:Rastreio,
             resposta = f"Procurando encomenda para remover";
             bot.reply_to(mensagem,resposta);
             if(db.delete_rastreio(id_user=id_user,codigo=codigo)):
-                if(not(BKP_TOTAL)):
-                    bkp.delete_rastreio(id_user=id_user,codigo=codigo);
+                bkp.delete_rastreio(id_user=id_user,codigo=codigo)
                 resposta = f"Encomenda Deletada";
                 bot.reply_to(mensagem,resposta);
                 return;
@@ -299,27 +298,31 @@ def app(verificador:Verificadores,rastreador:Rastreio,
 # MAIN()
 #-----------------------
 if __name__ == '__main__':
-    db = maria( host=senhas.host,user=senhas.user,
-                password=senhas.passaword,
-                database=senhas.database);
-    bkp         = lite();
+    db          = MariaDB(  host=senhas.host,user=senhas.user,
+                            password=senhas.passaword,
+                            database=senhas.database);
+    bkp         = Sqlite();
     bot         = telebot.TeleBot(senhas.CHAVE_API);
     rastreador  = Rastreio();
     verificador = Verificadores();
+    
     # Cria a Thread
-    thread_app     =    threading.Thread(target=app, 
-                        args=(verificador,rastreador,bot,db,bkp,));
-    thread_banco   =    threading.Thread(target=banco, 
-                        args=(rastreador,bot,db,bkp,));
-    thread_remedio =    threading.Thread(target=hora_do_remedio, 
-                        args=(bot,));
+    threads_bot:list = [];
+    threads_bot.append( threading.Thread(target=app, 
+                        args=(verificador,rastreador,bot,db,bkp,),
+                        daemon=True));
+    threads_bot.append( threading.Thread(target=banco, 
+                        args=(rastreador,bot,db,bkp,),
+                        daemon=True));
+    threads_bot.append( threading.Thread(target=hora_do_remedio,
+                        args=(bot,db,),daemon=True));
     # Inicia a Thread
-    thread_app.start();
-    time.sleep(5);
-    thread_banco.start();
-    time.sleep(5);
-    thread_remedio.start();
+    for t in threads_bot:
+        t.start();
     # Aguarda finalizar a Thread
-    thread_banco.join();
-    thread_app.join();
+    while True:
+        time.sleep(1);
+        for t in threads_bot:
+            if(not (t.is_alive())):
+                raise threading.ThreadError("Thread não deveria ter morrido");
 #-----------------------
