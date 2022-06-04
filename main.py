@@ -101,9 +101,7 @@ def app(verificador:Verificadores,rastreador:Rastreio,
         return True;
     
     def validar(regex:re,mensagem) -> list:
-        print(mensagem)
         dados = regex.findall(mensagem);
-        print(dados)
         if(dados == []):
             return [False,''];
         return [True,dados[0]];
