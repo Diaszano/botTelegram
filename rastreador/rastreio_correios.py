@@ -11,7 +11,15 @@ import requests
 # CLASSES
 #-----------------------
 class Rastreio:
+    """Rastreio
+        
+        Classe Rastreio.
+    """
     def __init__(self) -> None:
+        """Rastreio
+        
+        Classe Rastreio.
+        """
         regex               = ( r"(?P<Ano>[0-9]{4})(?:\-)"
                                 r"(?P<Mes>[0-9]{2})(?:\-)"
                                 r"(?P<Dia>[0-9]{2})(?:t)"
@@ -75,11 +83,15 @@ class Rastreio:
                 informacoes = ( valor 
                                 for valor in informacoes 
                                 if valor != '');
-                informacoes = self.__limparMensagem(informacoes);
+                informacoes = self.__limpar_mensagem(informacoes);
                 return informacoes;
         return "";
     
-    def __limparMensagem(self,eventos:list = []) -> list:
+    def __limpar_mensagem(self,eventos:list = []) -> list:
+        """Limpar Mensagem
+        
+        Aqui deixamos a mensagem de uma forma legível.
+        """
         rastreio          = [];
         for resultado in eventos:
             dia       = '';
@@ -126,7 +138,7 @@ class Rastreio:
                     uf          = uf.replace('"','');
                     cidade      = cidade.replace('"','');
                     destino     = f' para [{cidade}/{uf}]';
-            mensagem = (    f'[{self.__limpaData(dia,self.__re_dia)}] - '
+            mensagem = (    f'[{self.__limpa_data(dia,self.__re_dia)}] - '
                             f'{descricao} {local}{destino}'
                             f'{detalhe}\n\n\n');
             rastreio.append(mensagem);
@@ -137,7 +149,11 @@ class Rastreio:
         return rastreio_str;
 
     @staticmethod
-    def __limpaData(data:str='',regex:re=None)->str:
+    def __limpa_data(data:str='',regex:re=None)->str:
+        """Limpa Data
+        
+        Aqui deixamos a data de uma forma agradável.
+        """
         data = regex.findall(data);
         if(data != []):
             data     = data[0];

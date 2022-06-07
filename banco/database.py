@@ -16,6 +16,10 @@ class DataBase(ABC):
     # -----------------------
     @abstractmethod
     def _conexao(self):
+        """Conexão
+
+        Aqui faremos a conexão com  o banco de dados
+        """
         pass;
     # -----------------------
     # CRUD
@@ -23,18 +27,34 @@ class DataBase(ABC):
     # Create
     @abstractmethod
     def _insert(self,comando:str,tupla:tuple) -> None:
+        """Insert
+
+        Aqui faremos o insert no banco de dados
+        """
         pass;
     # Read
     @abstractmethod
     def _select(self,comando:str) -> list:
+        """Select
+
+        Aqui faremos o select no banco de dados
+        """
         pass;
     # Update
     @abstractmethod
     def _update(self,comando:str) -> None:
+        """Update
+
+        Aqui faremos o update no banco de dados
+        """
         pass;
     # Delete
     @abstractmethod
     def _delete(self,comando:str) -> None:
+        """Delete
+
+        Aqui faremos o delete no banco de dados
+        """
         pass;
     # -----------------------
     # CPF

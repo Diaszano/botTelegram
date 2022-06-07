@@ -7,8 +7,8 @@ import sys
 import sqlite3
 from typing import Union
 from threading import Lock
-from .database import DataBase
 from datetime import datetime
+from .database import DataBase
 #-----------------------
 # CONSTANTES
 #-----------------------
@@ -17,6 +17,10 @@ from datetime import datetime
 #-----------------------
 class DataBaseSqlite(DataBase):
     def __init__(self) -> None:
+        """Banco de Dados SqLite
+
+        Aqui utilizaremos o banco de dados SqLite
+        """
         caminho = os.path.dirname(os.path.realpath('~/'));
         pasta   = os.path.join(caminho,"data");
         arquivo = "rastreador.db";
@@ -31,6 +35,11 @@ class DataBaseSqlite(DataBase):
     # -----------------------
     @staticmethod
     def _dif_segundos(data:str) -> Union[int,float]:
+        """Diferença segundos
+
+        Aqui faz o calculo da diferença de segundos de uma data
+        com o momento atual.
+        """
         if((data == '') or (not isinstance(data,str))):
             return -1;
         data_agora = datetime.now();
@@ -44,6 +53,10 @@ class DataBaseSqlite(DataBase):
     
     @staticmethod
     def __corrigir_comando(comando:str) -> str:
+        """Corrigir Comando
+
+        Aqui fazemos a mudança do sql do MariaDB para o SqLite.
+        """
         now     = "(SELECT DATETIME('now','localtime'))";
         comando = comando.replace('%s','?');
         comando = comando.replace('now()',now);
@@ -56,6 +69,11 @@ class DataBaseSqlite(DataBase):
         return connection;
     
     def __create_index(self) -> None:
+        """Create Index
+
+        Aqui fazemos aqui fazemos a criação dos index
+        das tabelas.
+        """
         comandos = [
             # Tabela dos Rastreios
             (   " CREATE INDEX IF NOT EXISTS "
@@ -116,6 +134,10 @@ class DataBaseSqlite(DataBase):
             self.__execute_create(comando=comando);
     
     def __create_table(self) -> None:
+        """Create Table
+
+        Aqui fazemos aqui fazemos a criação das tabelas.
+        """
         comandos = [
             # Tabela dos Rastreios
             (   " CREATE TABLE IF NOT EXISTS rastreio( "
@@ -172,6 +194,11 @@ class DataBaseSqlite(DataBase):
                 sys.exit(0);
         
     def __execute_create(self,comando:str) -> Union[None,bool]:
+        """Execute Create
+
+        Aqui fazemos aqui fazemos a execução dos __create_table e 
+        __create_index.
+        """
         retorno:bool = False;
         self.lock.acquire();
         try:
@@ -282,5 +309,5 @@ class DataBaseSqlite(DataBase):
 # MAIN()
 #-----------------------
 if(__name__ == "__main__"):
-    db = DataBaseSqlite();
+    pass;
 #-----------------------
