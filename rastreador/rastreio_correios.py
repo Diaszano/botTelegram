@@ -77,7 +77,7 @@ class Rastreio:
                                 if valor != '');
                 informacoes = self.__limparMensagem(informacoes);
                 return informacoes;
-        return '';
+        return "";
     
     def __limparMensagem(self,eventos:list = []) -> list:
         rastreio          = [];

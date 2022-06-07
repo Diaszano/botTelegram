@@ -37,20 +37,24 @@ def banco(  rastreador:Rastreio,bot:telebot.TeleBot,
                 time.sleep(tempo_de_espera);
         elif((tempo_banco/60) >= TEMPO_MAXIMO):
             dados = db.atualiza_rastreio();
+            # return [codigo,informacoes,users];
             if(dados != []):
-                id_user          = str(dados[0]);
-                codigo           = str(dados[1]);
-                informacoes      = str(dados[2]);
-                nome             = str(dados[3]).title();
+                codigo      = str(dados[0]);
+                informacoes = str(dados[1]);
+                users:list  = dados[2];
+
                 nova_informacoes = rastreador.rastrear(codigo=codigo);
+                
                 if(nova_informacoes != ""):
                     if(informacoes.upper() != nova_informacoes.upper()):
-                        resposta = (f"Temos atualizações da sua "
-                                    f"encomenda \n\n{nova_informacoes}"
-                                    f"Encomenda: {codigo} {nome}");
-                        bot.send_message(id_user,resposta);
+                        for id_user, nome in users:
+                            resposta = (f"Temos atualizações da sua "
+                                        f"encomenda \n\n"
+                                        f"{nova_informacoes}"
+                                        f"Encomenda: {codigo} {nome}");
+                            bot.send_message(id_user,resposta);
                         informacoes = nova_informacoes;
-                tupla = (id_user,codigo,informacoes);
+                tupla = (codigo,informacoes);
                 db.update_rastreio(tupla=tupla);
         else:
             tempo           = TEMPO_MAXIMO * 60;
@@ -277,15 +281,19 @@ if __name__ == '__main__':
     rastreador  = Rastreio();
     verificador = Verificadores();
     # Cria a Thread
-    thread_app     =    threading.Thread(target=app, 
-                        args=(verificador,rastreador,bot,db,));
-    thread_banco   =    threading.Thread(target=banco, 
-                        args=(rastreador,bot,db,));
+    threads_bot:list = [];
+    threads_bot.append(threading.Thread(target=app, 
+                        args=(verificador,rastreador,bot,db,)));
+    threads_bot.append(threading.Thread(target=banco, 
+                        args=(rastreador,bot,db,)));
     # Inicia a Thread
-    thread_app.start();
-    time.sleep(5);
-    thread_banco.start();
+    for t in threads_bot:
+        t.start();
     # Aguarda finalizar a Thread
-    thread_banco.join();
-    thread_app.join();
+    while True:
+        time.sleep(1);
+        for t in threads_bot:
+            if(not (t.is_alive())):
+                mensagem = "Thread não deveria ter morrido";
+                raise threading.ThreadError(mensagem);
 #-----------------------
