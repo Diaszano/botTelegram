@@ -24,11 +24,11 @@
 		);
 	-- Tabela das Solicitações de Rastreio
 		CREATE TABLE IF NOT EXISTS solicitacao_rastreio(
-			id				INT			UNSIGNED AUTO_INCREMENT NOT NULL,
-			id_user			INT			UNSIGNED NOT NULL,
-			id_rastreio		INT			UNSIGNED NOT NULL,
-			nome_rastreio	VARCHAR(30)	NOT NULL,
-			PRIMARY KEY (id)
+		 	id				INT			UNSIGNED AUTO_INCREMENT NOT NULL,
+		 	id_user			INT			UNSIGNED NOT NULL,
+		 	id_rastreio		INT			UNSIGNED NOT NULL,
+		 	nome_rastreio	VARCHAR(30)	NOT NULL,
+		 	PRIMARY KEY (id)
 		);
 	-- Tabela dos CPFs
 		CREATE TABLE IF NOT EXISTS cpf(
@@ -39,11 +39,11 @@
 		);
 	-- Tabela das Solicitações dos CPFs
 		CREATE TABLE IF NOT EXISTS solicitacao_cpf(
-			id				INT			UNSIGNED AUTO_INCREMENT NOT NULL,
-			id_user			INT			UNSIGNED NOT NULL,
-			id_cpf			INT			UNSIGNED NOT NULL,
-			dia				DATETIME	NOT NULL,
-			PRIMARY KEY (id)
+		 	id				INT			UNSIGNED AUTO_INCREMENT NOT NULL,
+		 	id_user			INT			UNSIGNED NOT NULL,
+		 	id_cpf			INT			UNSIGNED NOT NULL,
+		 	dia				DATETIME	NOT NULL,
+		 	PRIMARY KEY (id)
 		);
 	-- Tabela dos CNPJs 	
 		CREATE TABLE IF NOT EXISTS cnpj(
@@ -54,11 +54,11 @@
 		);
 	-- Tabela das Solicitações dos CNPJs
 		CREATE TABLE IF NOT EXISTS solicitacao_cnpj(
-			id				INT			UNSIGNED AUTO_INCREMENT NOT NULL,
-			id_user			INT			UNSIGNED NOT NULL,
-			id_cnpj			INT			UNSIGNED NOT NULL,
-			dia				DATETIME	NOT NULL,
-			PRIMARY KEY (id)
+		 	id				INT			UNSIGNED AUTO_INCREMENT NOT NULL,
+		 	id_user			INT			UNSIGNED NOT NULL,
+		 	id_cnpj			INT			UNSIGNED NOT NULL,
+		 	dia				DATETIME	NOT NULL,
+		 	PRIMARY KEY (id)
 		);
 	-- Tabela das mensagens
 		CREATE TABLE IF NOT EXISTS mensagem(

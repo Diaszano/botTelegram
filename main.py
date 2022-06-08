@@ -56,20 +56,24 @@ def banco(  rastreador:Rastreio,bot:telebot.TeleBot,
                 time.sleep(tempo_de_espera);
         elif((tempo_banco/60) >= TEMPO_MAXIMO):
             dados = db.atualiza_rastreio();
+            # return [codigo,informacoes,users];
             if(dados != []):
-                id_user          = str(dados[0]);
-                codigo           = str(dados[1]);
-                informacoes      = str(dados[2]);
-                nome             = str(dados[3]).title();
+                codigo      = str(dados[0]);
+                informacoes = str(dados[1]);
+                users:list  = dados[2];
+
                 nova_informacoes = rastreador.rastrear(codigo=codigo);
+                
                 if(nova_informacoes != ""):
                     if(informacoes.upper() != nova_informacoes.upper()):
-                        resposta = (f"Temos atualizações da sua "
-                                    f"encomenda \n\n{nova_informacoes}"
-                                    f"Encomenda: {codigo} {nome}");
-                        bot.send_message(id_user,resposta);
+                        for id_user, nome in users:
+                            resposta = (f"Temos atualizações da sua "
+                                        f"encomenda \n\n"
+                                        f"{nova_informacoes}"
+                                        f"Encomenda: {codigo} {nome}");
+                            bot.send_message(id_user,resposta);
                         informacoes = nova_informacoes;
-                tupla = (id_user,codigo,informacoes);
+                tupla = (codigo,informacoes);
                 db.update_rastreio(tupla=tupla);
                 bkp.update_rastreio(tupla=tupla);
         else:
@@ -85,7 +89,8 @@ def app(verificador:Verificadores,rastreador:Rastreio,
                 r'/encomendas|'
                 r'/deletar|'
                 r'/cpf|'
-                r'/cnpj');
+                r'/cnpj|'
+                r'/remedio');
     regex_opcoes = re.compile(regex,re.MULTILINE | re.IGNORECASE);
     
     def verificar(mensagem):
@@ -118,6 +123,9 @@ def app(verificador:Verificadores,rastreador:Rastreio,
             if(nome == "/CNPJ".upper()):
                 verificar_cnpj(mensagem);
                 return False;
+            if(nome == "/remedio".upper()):
+                remedio(mensagem);
+                # return False;
         return True;
     
     def validar(regex:re,mensagem) -> list:
@@ -125,6 +133,25 @@ def app(verificador:Verificadores,rastreador:Rastreio,
         if(dados == []):
             return [False,''];
         return [True,dados[0]];
+
+    def remedio(mensagem):
+        dados = str(mensagem.text);
+        regex:str =(r'(?:^\/remedio\s*){1}'
+                    r'(?P<horario>[0-9]{2}\:{1}[0-9]{2}){1}'
+                    r'(?:\s*\-\s*){0,1}(?P<Nome>.{0,30}){1}');
+        dados = re.findall(regex,dados,re.MULTILINE | re.IGNORECASE);
+        if(dados == []):
+            resposta = f"Dados Inválidos";
+            bot.reply_to(mensagem,resposta);
+            return;
+        dados      = dados[0];
+        hora:str   = dados[0];
+        nome:str   = dados[1];
+        data_agora = datetime.now();
+        date2      = data_agora.strftime('%H:%M');
+        d2         = datetime.strptime(date2,'%H:%M');
+        asa = datetime.strptime(hora,'%H:%M');
+        print(f" dados - {dados} \nd1 - {asa} \nd2 - {d2}\n{asa == asa}");
 
     def rastrear_encomendas(mensagem):
         dados   = str(mensagem.text);
@@ -209,7 +236,6 @@ def app(verificador:Verificadores,rastreador:Rastreio,
             resposta = f"Procurando encomenda para remover";
             bot.reply_to(mensagem,resposta);
             if(db.delete_rastreio(id_user=id_user,codigo=codigo)):
-                bkp.delete_rastreio(id_user=id_user,codigo=codigo)
                 resposta = f"Encomenda Deletada";
                 bot.reply_to(mensagem,resposta);
                 return;
