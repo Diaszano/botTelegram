@@ -2,7 +2,6 @@
 # BIBLIOTECAS
 #-----------------------
 import re
-import sys
 import time
 import telebot
 import threading
