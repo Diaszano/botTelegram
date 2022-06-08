@@ -6,6 +6,7 @@ import time
 import telebot
 import threading
 from login import senhas # minha pasta pessoal de senhas
+from datetime import datetime
 from rastreador import Rastreio
 from banco import DataBaseSqlite
 from verificador import Verificadores
@@ -25,6 +26,21 @@ def pegar_digitos(mensagem:str) -> str:
         if(caracter.isdigit()):
             temp += caracter;
     return temp;
+
+def hora_do_remedio(bot:telebot.TeleBot,db:DataBaseSqlite) -> None:
+    isTrue:bool = True;
+    while True:
+        hora = int(datetime.today().strftime('%H:%S'));
+        if(hora == HORA and isTrue):
+            IDs      = senhas.IDs;
+            resposta = "Horário do Remédio 😁💊";
+            for id_user in IDs:
+                bot.send_message(id_user,resposta.title());
+            isTrue = False;
+            pass;
+        elif(hora != HORA):
+            isTrue = True;
+        time.sleep(30);
 
 def banco(  rastreador:Rastreio,bot:telebot.TeleBot,
             db:DataBaseSqlite)->None:
@@ -69,7 +85,8 @@ def app(verificador:Verificadores,rastreador:Rastreio,
                 r'/encomendas|'
                 r'/deletar|'
                 r'/cpf|'
-                r'/cnpj');
+                r'/cnpj|'
+                r'/remedio');
     regex_opcoes = re.compile(regex,re.MULTILINE | re.IGNORECASE);
     
     def verificar(mensagem):
@@ -102,6 +119,9 @@ def app(verificador:Verificadores,rastreador:Rastreio,
             if(nome == "/CNPJ".upper()):
                 verificar_cnpj(mensagem);
                 return False;
+            if(nome == "/remedio".upper()):
+                remedio(mensagem);
+                # return False;
         return True;
     
     def validar(regex:re,mensagem) -> list:
@@ -109,6 +129,25 @@ def app(verificador:Verificadores,rastreador:Rastreio,
         if(dados == []):
             return [False,''];
         return [True,dados[0]];
+
+    def remedio(mensagem):
+        dados = str(mensagem.text);
+        regex:str =(r'(?:^\/remedio\s*){1}'
+                    r'(?P<horario>[0-9]{2}\:{1}[0-9]{2}){1}'
+                    r'(?:\s*\-\s*){0,1}(?P<Nome>.{0,30}){1}');
+        dados = re.findall(regex,dados,re.MULTILINE | re.IGNORECASE);
+        if(dados == []):
+            resposta = f"Dados Inválidos";
+            bot.reply_to(mensagem,resposta);
+            return;
+        dados      = dados[0];
+        hora:str   = dados[0];
+        nome:str   = dados[1];
+        data_agora = datetime.now();
+        date2      = data_agora.strftime('%H:%M');
+        d2         = datetime.strptime(date2,'%H:%M');
+        asa = datetime.strptime(hora,'%H:%M');
+        print(f" dados - {dados} \nd1 - {asa} \nd2 - {d2}\n{asa == asa}");
 
     def rastrear_encomendas(mensagem):
         dados   = str(mensagem.text);
@@ -283,9 +322,11 @@ if __name__ == '__main__':
     # Cria a Thread
     threads_bot:list = [];
     threads_bot.append(threading.Thread(target=app, 
-                        args=(verificador,rastreador,bot,db,)));
+                        args=(verificador,rastreador,bot,db,),
+                        daemon=True));
     threads_bot.append(threading.Thread(target=banco, 
-                        args=(rastreador,bot,db,)));
+                        args=(rastreador,bot,db,),
+                        daemon=True));
     # Inicia a Thread
     for t in threads_bot:
         t.start();
