@@ -7,6 +7,8 @@
 -- 		DROP TABLE IF EXISTS cnpj;
 -- 		DROP TABLE IF EXISTS solicitacao_cnpj;
 -- 		DROP TABLE IF EXISTS mensagem;
+-- 		DROP TABLE IF EXISTS hora_do_remedio;
+-- 		DROP TABLE IF EXISTS solicitacao_hora_do_remedio;
 -- Criação das tabelas necessárias
 	-- Tabela dos Rastreios 
 		CREATE TABLE IF NOT EXISTS rastreio(
@@ -58,6 +60,20 @@
 			dia 			TEXT	NOT NULL,
 			log_mensagem 	TEXT 	NOT NULL
 		);
+	-- Tabela do Horário do Remédio
+		CREATE TABLE IF NOT EXISTS hora_do_remedio(
+			id 			INTEGER PRIMARY KEY AUTOINCREMENT,
+			hora 		TEXT NOT NULL UNIQUE,
+			atualizacao TEXT NOT NULL	
+		);
+	-- Tabela das Solicitações do Horário do Remédio
+		CREATE TABLE IF NOT EXISTS solicitacao_hora_do_remedio(
+			id 				INTEGER PRIMARY KEY AUTOINCREMENT,
+			id_user	 		INTEGER NOT NULL,
+			id_hora 		INTEGER NOT NULL,
+			nome_remedio 	TEXT 	NOT NULL,
+			FOREIGN KEY(id_hora) REFERENCES hora_do_remedio (id)
+		);
 -- Criação de index das tabelas
 	-- Tabela dos Rastreios 
 		CREATE INDEX  IF NOT EXISTS index_rastreio_id 		ON rastreio(id); 
@@ -81,6 +97,12 @@
 		CREATE INDEX  IF NOT EXISTS index_cnpj_id_user 	ON solicitacao_cnpj(id_user); 
 		CREATE INDEX  IF NOT EXISTS index_cnpj_id_cnpj 	ON solicitacao_cnpj(id_cnpj);
 		CREATE INDEX  IF NOT EXISTS index_cnpj_dia 		ON solicitacao_cnpj(dia);
-	-- Tabela das mensagem
+	-- Tabela das mensagem;
 		CREATE INDEX  IF NOT EXISTS index_mensagem_id_user 	ON mensagem(id_user);
 		CREATE INDEX  IF NOT EXISTS index_mensagem_dia 		ON mensagem(dia);
+	-- Tabela do Horário do Remédio
+		CREATE INDEX  IF NOT EXISTS index_hora_do_remedio_id 	ON hora_do_remedio(id);
+		CREATE INDEX  IF NOT EXISTS index_hora_do_remedio_hora 	ON hora_do_remedio(hora);
+	-- Tabela das Solicitações do Horário do Remédio
+		CREATE INDEX  IF NOT EXISTS index_solicitacao_hora_do_remedio_id_user ON solicitacao_hora_do_remedio(id_user);
+		CREATE INDEX  IF NOT EXISTS index_solicitacao_hora_do_remedio_id_hora ON solicitacao_hora_do_remedio(id_hora);
