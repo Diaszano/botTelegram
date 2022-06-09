@@ -372,7 +372,7 @@ class DataBase(ABC):
     # -----------------------
     # Horário do Remédio
     # -----------------------
-    def insert_hora_do_remedio(self,tupla:tuple=[]) -> None:
+    def insert_hora_do_remedio(self,tupla:tuple=[]) -> bool:
         """Insert Horário do Remédio
 
         :param  - tupla:tuple(id_user,hora,nome)
@@ -381,26 +381,26 @@ class DataBase(ABC):
         Aqui nós iremos fazer a inserção do horário do remédio
         do cliente.
         """
+        retorno:bool = False;
+
         if(not isinstance(tupla,tuple)):
-            return;
+            return retorno;
         elif(len(tupla) != 3):
-            return;
+            return retorno;
         
         id_user     :str = str(tupla[0]);
         hora        :str = str(tupla[1]);
         nome_remedio:str = str(tupla[2]);
 
         if(id_user == ''):
-            return;
+            return retorno;
         if(hora == ''):
-            return;
-        if(nome_remedio == ''):
-            return;
+            return retorno;
 
         id_hora:str = self._pega_id_hora_do_remedio(hora=hora);
 
         if(int(id_hora) <= 0):
-            return;
+            return retorno;
 
         tupla_insert  :tuple = (id_user,id_hora,nome_remedio,);
         comando_insert:str   = (
@@ -414,12 +414,13 @@ class DataBase(ABC):
                                     tupla=tupla_verifica);
 
         if(retorno_verifica):
-            return;
-        
+            return retorno;
+        retorno = True;
         self._insert(
             comando=comando_insert,
             tupla=tupla_insert
         );
+        return retorno;
     
     def _verifica_user_hora_do_remedio(self,tupla:tuple=[]) -> bool:
         """Verifica user Horário do Remédio
@@ -523,14 +524,14 @@ class DataBase(ABC):
             id_hora       :str = retorno_select[0][0];
             comando_update:str = (
                 f" UPDATE hora_do_remedio "
-                f" atualizacao='{dia}' "
+                f" SET atualizacao='{dia}' "
                 f" WHERE id ='{id_hora}' "
             );
 
             self._update(comando=comando_update);
             
             comando_select = (
-                f" SELECT id, nome_remedio "
+                f" SELECT id_user, nome_remedio "
                 f" FROM solicitacao_hora_do_remedio "
                 f" WHERE id_hora = '{id_hora}' "
             );

@@ -35,7 +35,7 @@ def hora_do_remedio(bot:telebot.TeleBot,db:DataBaseSqlite) -> None:
                     f"Está no horário do remédio "
                     f"{nome_remedio} 💊😁"
                 );
-                bot.send_message(id_user,resposta.title());
+                bot.send_message(id_user,resposta);
         time.sleep(35);
 
 def banco(  rastreador:Rastreio,bot:telebot.TeleBot,
@@ -140,14 +140,16 @@ def app(verificador:Verificadores,rastreador:Rastreio,
             return;
         dados      = dados[0];
         hora:str   = str(dados[0]);
-        nome:str   = str(dados[1]);
+        nome:str   = str(dados[1]).title();
         if(int(hora[:2]) >= 24):
-            resposta = f"Dados Inválidos";
+            resposta = f"Dados Inválidos".title();
             bot.reply_to(mensagem,resposta);
             return;
-        tupla:tuple = (id_user,hora,nome);
-        db.insert_hora_do_remedio(tupla=tupla);
-        resposta = f"Remédio cadastrado 😁";
+        tupla:tuple = (id_user,hora,nome,);
+        if(db.insert_hora_do_remedio(tupla=tupla)):
+            resposta = f"Remédio cadastrado 😁".title();
+        else:
+            resposta = "O remédio não foi cadastrado";
         bot.reply_to(mensagem,resposta);
 
     def rastrear_encomendas(mensagem):
@@ -296,20 +298,28 @@ def app(verificador:Verificadores,rastreador:Rastreio,
 
     @bot.message_handler(func=verificar)
     def responder(mensagem):
-        texto =("Escolha uma opção para continuar:"
-                "\nPara rastrear sua encomenda:\n"
-                '/rastrear "código" - "Nome do Produto"\n'
+        texto =('Escolha uma opção para continuar:\n\n '
+                'Para rastrear sua encomenda:\n'
+                '-> /rastrear código - Nome do Produto\n'
+                '  \t\t\t\tExemplo: /rastrear '
+                'SQ458226057BR - Celular\n'
                 '\nPara ver suas encomendas guardadas:\n'
-                '/encomendas\n'
+                '-> /encomendas -'
                 '\tCom esse tu vê todas as informações\n'
-                '/listar\n'
-                '\tCom esse tu vê só o codigo de rastreio e o nome\n\n'
+                '-> /listar -'
+                '\tCom esse tu vê só o codigo '
+                'de rastreio e o nome\n\n'
                 'Para deletar uma encomenda guardada:\n'
-                '/deletar "código"\n\n'
+                '-> /deletar "código"\n\n'
                 'Para verificar cpf ou cnpj:\n'
-                '/cpf "o cpf da consulta"\n'
-                '/cnpj "o cnpj da consulta"\n\n'
-                'Se responder qualquer outra coisa não vai funcionar');
+                '-> /cpf "o cpf da consulta"\n'
+                '-> /cnpj "o cnpj da consulta"\n\n'
+                'Para adicionar lembrete do remédio:\n'
+                '-> /remedio HH:MM - Nome do remédio \n'
+                '  \t\t\t\tExemplo: /remedio 20:30 - '
+                'Paracetamol\n\n'
+                'Se responder qualquer outra coisa '
+                'não vai funcionar!');
         bot.reply_to(mensagem, texto);
     bot.polling();
 #-----------------------
@@ -327,6 +337,9 @@ if __name__ == '__main__':
                         daemon=True));
     threads_bot.append(threading.Thread(target=banco, 
                         args=(rastreador,bot,db,),
+                        daemon=True));
+    threads_bot.append(threading.Thread(target=hora_do_remedio, 
+                        args=(bot,db,),
                         daemon=True));
     # Inicia a Thread
     for t in threads_bot:
