@@ -30,11 +30,15 @@ def hora_do_remedio(bot:telebot.TeleBot,db:DataBaseSqlite) -> None:
     while True:
         lista:list = db.verifica_hora_do_remedio();
         if(lista != []):
-            for id_user, nome_remedio in lista:
-                resposta = (
-                    f"Está no horário do remédio "
-                    f"{nome_remedio} 💊😁"
+            for id_user, nome_remedio in lista:           
+                resposta:str = (
+                    "Está no horário do remédio 💊😁"
                 );
+                if (nome_remedio != ''):
+                    resposta = (
+                        f" Está na hora de tomar "
+                        f"{nome_remedio} 💊😁"
+                    );
                 bot.send_message(id_user,resposta);
         time.sleep(35);
 
@@ -76,13 +80,17 @@ def banco(  rastreador:Rastreio,bot:telebot.TeleBot,
 
 def app(verificador:Verificadores,rastreador:Rastreio,
         bot:telebot.TeleBot,db:DataBaseSqlite)->None:
-    regex = (   r'/rastrear|'
-                r'/listar|'
-                r'/encomendas|'
-                r'/deletar|'
-                r'/cpf|'
-                r'/cnpj|'
-                r'/remedio');
+    regex = (   
+        r'/Rastrear_encomenda|'
+        r'/Listar_encomendas|'
+        r'/Visualizar_encomendas|'
+        r'/Deletar_encomenda|'
+        r'/Verificar_CPF|'
+        r'/Verificar_CNPJ|'
+        r'/Adicionar_remedio|'
+        r'/Listar_remedios|'
+        r'/Deletar_remedio|'
+    );
     regex_opcoes = re.compile(regex,re.MULTILINE | re.IGNORECASE);
     
     def verificar(mensagem):
@@ -91,32 +99,41 @@ def app(verificador:Verificadores,rastreador:Rastreio,
                         mensagem=mensagem.text);
         nome = str(nome).upper();
         if(isTrue):
-            # Rastrear
-            if(nome == "/Rastrear".upper()):
+            # Rastrear encomenda
+            if(nome == "/Rastrear_encomenda".upper()):
                 rastrear_encomendas(mensagem);
                 return False;
-            # Listar
-            if(nome == "/Listar".upper()):
+            # Listar encomenda
+            if(nome == "/Listar_encomendas".upper()):
                 listar_encomendas(mensagem);
                 return False;
-            # Encomendas
-            if(nome == "/Encomendas".upper()):
+            # Encomendas encomenda
+            if(nome == "/Visualizar_encomendas".upper()):
                 buscar_encomendas(mensagem);
                 return False;
-            # Deletar
-            if(nome == "/Deletar".upper()):
+            # Deletar encomenda
+            if(nome == "/Deletar_encomenda".upper()):
                 deletar_encomendas(mensagem);
                 return False;
-            # CPF
-            if(nome == "/CPF".upper()):
+            # Verificar CPF
+            if(nome == "/Verificar_CPF".upper()):
                 verificar_cpf(mensagem);
                 return False;
-            # CNPJ
-            if(nome == "/CNPJ".upper()):
+            # Verificar CNPJ
+            if(nome == "/Verificar_CNPJ".upper()):
                 verificar_cnpj(mensagem);
                 return False;
-            if(nome == "/remedio".upper()):
+            # Adicionar remédio
+            if(nome == "/Adicionar_remedio".upper()):
                 adicionar_remedio(mensagem);
+                return False;
+            # Listar remédio
+            if(nome == "/Listar_remedios".upper()):
+                listar_remedio(mensagem);
+                return False;
+            # Deletar remédio
+            if(nome == "/Deletar_remedio".upper()):
+                deletar_remedio(mensagem);
                 return False;
         return True;
     
@@ -125,11 +142,61 @@ def app(verificador:Verificadores,rastreador:Rastreio,
         if(dados == []):
             return [False,''];
         return [True,dados[0]];
+    
+    def listar_remedio(mensagem) -> None:
+        dados  :str = str(mensagem.text);
+        id_user:str = str(mensagem.chat.id);
+        
+        retorno_list:list = db.list_hora_do_remedio_user(
+            id_user=id_user
+        );
+        
+        resposta:str = (
+            f"Tu tens {len(retorno_list)} 💊 " 
+            f"remédios cadastrados\n"
+        );
+        for hora, nome_remedio in retorno_list:
+            resposta += (
+                f"Remédio {nome_remedio} às {hora}\n"
+            );
+        bot.reply_to(mensagem,resposta);
+
+
+    def deletar_remedio(mensagem) -> None:
+        dados  :str = str(mensagem.text);
+        id_user:str = str(mensagem.chat.id);
+        regex  :str = (
+            r'(?:^\/Deletar_remedio\s*){1}'
+            r'(?P<horario>[0-2]{1}[0-9]{1}\:'
+            r'{1}[0-5]{1}[0-9]{1}){1}'
+        );
+        
+        dados = re.findall(regex,dados,re.MULTILINE | re.IGNORECASE);
+        
+        if(dados == []):
+            resposta = f"Dados Inválidos";
+            bot.reply_to(mensagem,resposta);
+            return;
+        
+        dados      = dados[0];
+        hora:str   = str(dados);
+        
+        if(int(hora[:2]) >= 24):
+            resposta = f"Dados Inválidos".title();
+            bot.reply_to(mensagem,resposta);
+            return;
+        
+        tupla:tuple = (id_user,hora,);
+        if(db.delete_hora_do_remedio(tupla=tupla)):
+            resposta = f"Remédio deletado 😁".title();
+        else:
+            resposta = "Tu não possui remédio nesse horário";
+        bot.reply_to(mensagem,resposta);
 
     def adicionar_remedio(mensagem) -> None:
-        dados = str(mensagem.text);
-        id_user = str(mensagem.chat.id);
-        regex:str =(r'(?:^\/remedio\s*){1}'
+        dados:str   = str(mensagem.text);
+        id_user:str = str(mensagem.chat.id);
+        regex:str   = (r'(?:^\/Adicionar_remedio\s*){1}'
                     r'(?P<horario>[0-2]{1}[0-9]{1}\:'
                     r'{1}[0-5]{1}[0-9]{1}){1}'
                     r'(?:\s*\-\s*){0,1}(?P<Nome>.{0,30}){1}');
@@ -298,28 +365,43 @@ def app(verificador:Verificadores,rastreador:Rastreio,
 
     @bot.message_handler(func=verificar)
     def responder(mensagem):
-        texto =('Escolha uma opção para continuar:\n\n '
-                'Para rastrear sua encomenda:\n'
-                '-> /rastrear código - Nome do Produto\n'
-                '  \t\t\t\tExemplo: /rastrear '
-                'SQ458226057BR - Celular\n'
-                '\nPara ver suas encomendas guardadas:\n'
-                '-> /encomendas -'
-                '\tCom esse tu vê todas as informações\n'
-                '-> /listar -'
-                '\tCom esse tu vê só o codigo '
-                'de rastreio e o nome\n\n'
-                'Para deletar uma encomenda guardada:\n'
-                '-> /deletar "código"\n\n'
-                'Para verificar cpf ou cnpj:\n'
-                '-> /cpf "o cpf da consulta"\n'
-                '-> /cnpj "o cnpj da consulta"\n\n'
-                'Para adicionar lembrete do remédio:\n'
-                '-> /remedio HH:MM - Nome do remédio \n'
-                '  \t\t\t\tExemplo: /remedio 20:30 - '
-                'Paracetamol\n\n'
-                'Se responder qualquer outra coisa '
-                'não vai funcionar!');
+        texto:str = ( 
+            'Escolha uma opção para continuar:\n\n '
+            'Para rastrear sua encomenda:\n'
+            '-> /Rastrear_encomenda código - Nome do Produto\n'
+            '  \t\t\t\tExemplo: /Rastrear_encomenda '
+            'SQ458226057BR - Celular\n'
+            '\nPara ver suas encomendas guardadas:\n'
+            '-> /Visualizar_encomendas -'
+            '\tRetorna todas as informações do rastreio\n'
+            '-> /Listar_encomendas -'
+            '\tRetorna o código e o nome\n\n'
+            'Para deletar uma encomenda guardada:\n'
+            '-> /Deletar_encomendar código\n'
+            '  \t\t\t\tExemplo: /Deletar_encomendar '
+            'SQ458226057BR\n\n'
+            'Para verificar cpf ou cnpj:\n'
+            '-> /Verificar_CPF cpf\n'
+            '  \t\t\t\tExemplo: /Verificar_CPF '
+            '000.000.000-00\n'
+            '-> /Verificar_CNPJ cnpj\n'
+            '  \t\t\t\tExemplo: /Verificar_CNPJ '
+            '00.000.000/0000-00\n\n'
+            'Para adicionar lembrete do remédio:\n'
+            '-> /Adicionar_remedio HH:MM - Nome do remédio \n'
+            '  \t\t\t\tExemplo: /Adicionar_remedio 08:30 - '
+            'Paracetamol\n'
+            '  \t\t\t\tExemplo: /Adicionar_remedio 19:45 - '
+            'Tylenol\n\n'
+            'Para listar lembrete do remédio:\n'
+            '-> /Listar_remedios - Retorna o nome e hora \n\n'
+            'Para deletar lembrete do remédio:\n'
+            '-> /Deletar_remedio HH:MM\n'
+            '  \t\t\t\tExemplo: /Deletar_remedio '
+            '08:30\n\n'
+            'Se responder qualquer outra coisa '
+            'não vai funcionar!'
+        );
         bot.reply_to(mensagem, texto);
     bot.polling();
 #-----------------------

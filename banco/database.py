@@ -556,24 +556,25 @@ class DataBase(ABC):
 
         id_user:str = str(tupla[0]);
         hora   :str = str(tupla[1]);
-
+        
         if(id_user == ''):
             return retorno;
+
+        id_hora:str = str(self._pega_id_hora_do_remedio(
+            hora=hora,
+            cria=False
+        ));
+        
         if(id_hora == ''):
             return retorno;
 
-        id_hora:str = self._pega_id_hora_do_remedio(
-            hora=hora,
-            cria=False
-        );
-
         if(int(id_hora) <= 0):
             return retorno;
-
+        
         tupla_verifica  :tuple  = (id_user,id_hora,);
         retorno_verifica:bool   = self._verifica_user_hora_do_remedio(
                                     tupla=tupla_verifica);
-
+        
         if(retorno_verifica):
             comando_delete:str = (
                 f" DELETE FROM "
@@ -582,6 +583,30 @@ class DataBase(ABC):
             );
             self._delete(comando=comando_delete);
             retorno = True;
+        return retorno;
+    
+    def list_hora_do_remedio_user(self,id_user:str='') -> list:
+        """Lista da Hora do Remédio do user
+
+        :param  - id_user:str
+        :return - list:[hora, nome_remedio]*n
+        
+        Aqui nós iremos listar todos os remédios dos user.
+        """
+        retorno:list = [];
+
+        if((not isinstance(id_user,str)) or (id_user == '')):
+            return retorno;
+
+        comando_select:str = (
+            f" SELECT hora, nome_remedio "
+            f" FROM solicitacao_hora_do_remedio "
+            f" INNER JOIN hora_do_remedio " 
+            f" ON hora_do_remedio.id = " 
+            f" solicitacao_hora_do_remedio.id_hora " 
+            f" WHERE id_user = '{id_user}' "
+        )
+        retorno = self._select(comando=comando_select);
         return retorno;
     # -----------------------
 #-----------------------
