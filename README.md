@@ -17,7 +17,7 @@
 
 - [X] Rastreio de encomendas
 - [x] Verificar o CPF e CNPJ
-- [ ] Hora do Remédio
+- [x] Hora do Remédio
 
 ### Como acessar o bot?
 

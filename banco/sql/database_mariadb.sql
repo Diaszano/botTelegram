@@ -68,6 +68,21 @@
 			log_mensagem 	LONGTEXT 	NOT NULL,
 			PRIMARY KEY (id)
 		);
+	-- Tabela do Horário do Remédio
+		CREATE TABLE IF NOT EXISTS hora_do_remedio(
+			id 			INT 		UNSIGNED AUTO_INCREMENT NOT NULL,
+			hora 		VARCHAR(5)	NOT NULL UNIQUE,
+			atualizacao VARCHAR(10)	NOT NULL,
+			PRIMARY KEY (id)
+		);
+	-- Tabela das Solicitações do Horário do Remédio
+		CREATE TABLE IF NOT EXISTS solicitacao_hora_do_remedio(
+			id 				INT 		UNSIGNED AUTO_INCREMENT NOT NULL,
+			id_user	 		INT 		UNSIGNED NOT NULL,
+			id_hora 		INT 		UNSIGNED NOT NULL,
+			nome_remedio 	VARCHAR(30)	NOT NULL,
+			PRIMARY KEY (id)
+		);
 -- Criação das referência necessárias
 	-- Tabela das Solicitações de Rastreio
 		ALTER TABLE solicitacao_rastreio 
@@ -81,6 +96,10 @@
 		ALTER TABLE solicitacao_cnpj 
 		ADD FOREIGN KEY (id_cnpj) 
 		REFERENCES cnpj(id);
+	-- Tabela das Solicitações do Horário do Remédio
+		ALTER TABLE solicitacao_hora_do_remedio
+		ADD FOREIGN KEY(id_hora) 
+		REFERENCES hora_do_remedio (id);
 -- Criação de index das tabelas
 	-- Tabela dos Rastreios 
 		CREATE INDEX  IF NOT EXISTS index_rastreio_id 		ON rastreio(id); 
@@ -107,3 +126,9 @@
 	-- Tabela das mensagem;
 		CREATE INDEX IF NOT EXISTS index_mensagem_id_user 	ON mensagem(id_user);
 		CREATE INDEX IF NOT EXISTS index_mensagem_dia 		ON mensagem(dia);
+	-- Tabela do Horário do Remédio
+		CREATE INDEX  IF NOT EXISTS index_hora_do_remedio_id 	ON hora_do_remedio(id);
+		CREATE INDEX  IF NOT EXISTS index_hora_do_remedio_hora 	ON hora_do_remedio(hora);
+	-- Tabela das Solicitações do Horário do Remédio
+		CREATE INDEX  IF NOT EXISTS index_solicitacao_hora_do_remedio_id_user ON solicitacao_hora_do_remedio(id_user);
+		CREATE INDEX  IF NOT EXISTS index_solicitacao_hora_do_remedio_id_hora ON solicitacao_hora_do_remedio(id_hora);

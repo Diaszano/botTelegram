@@ -3,6 +3,7 @@
 # BIBLIOTECAS
 #-----------------------
 from typing import Union
+from datetime import datetime
 from abc import ABC, abstractmethod
 #-----------------------
 # CONSTANTES
@@ -17,6 +18,7 @@ class DataBase(ABC):
     @abstractmethod
     def _conexao(self):
         """Conexão
+
         Aqui faremos a conexão com  o banco de dados
         """
         pass;
@@ -27,6 +29,7 @@ class DataBase(ABC):
     @abstractmethod
     def _insert(self,comando:str,tupla:tuple) -> None:
         """Insert
+
         Aqui faremos o insert no banco de dados
         """
         pass;
@@ -34,6 +37,7 @@ class DataBase(ABC):
     @abstractmethod
     def _select(self,comando:str) -> list:
         """Select
+
         Aqui faremos o select no banco de dados
         """
         pass;
@@ -41,6 +45,7 @@ class DataBase(ABC):
     @abstractmethod
     def _update(self,comando:str) -> None:
         """Update
+
         Aqui faremos o update no banco de dados
         """
         pass;
@@ -48,6 +53,7 @@ class DataBase(ABC):
     @abstractmethod
     def _delete(self,comando:str) -> None:
         """Delete
+
         Aqui faremos o delete no banco de dados
         """
         pass;
@@ -56,6 +62,7 @@ class DataBase(ABC):
     # -----------------------
     def insert_cpf(self,tupla:tuple=[]) -> None:
         """Insert CPF
+
         Aqui salvaremos os CPFs que os users pesquisarem
         """
         comando:str = ( " INSERT INTO solicitacao_cpf "
@@ -84,6 +91,7 @@ class DataBase(ABC):
 
     def _verifica_cpf(self,cpf:str='') -> list:
         """Verifica CPF
+
         Aqui verificaremos se já existe o cpf solicitado
         """
         if((cpf == '') or (not isinstance(cpf,str))):
@@ -100,6 +108,7 @@ class DataBase(ABC):
     # -----------------------
     def insert_cnpj(self,tupla:tuple=[]) -> None:
         """Insert CNPJ
+
         Aqui salvaremos os CNPJs que os users pesquisarem
         """
         comando:str = ( " INSERT INTO solicitacao_cnpj "
@@ -132,6 +141,7 @@ class DataBase(ABC):
     
     def _verifica_cnpj(self,cnpj:str='') -> list:
         """Verifica CNPJ
+
         Aqui verificaremos se já existe o cnpj solicitado
         """
         if((cnpj == '') or (not isinstance(cnpj,str))):
@@ -148,6 +158,7 @@ class DataBase(ABC):
     # -----------------------
     def insert_rastreio(self,tupla:tuple=[]) -> None:
         """Inserir rastreio
+
         Aqui faremos a inserção do Rastreio no banco de dados
         tupla = ('id_user','codigo','nome_rastreio', 'informacoes')"""
         
@@ -191,6 +202,7 @@ class DataBase(ABC):
     def _verifica_user_rastreio(self,id_user:str='',
                                 id_rastreio:str='')->bool:
         """verificar User Rastreio
+
         Aqui faremos a verificação do user com o rastreio solicitado
         """
         if((id_user == '') or (not isinstance(id_user,str))):
@@ -210,6 +222,7 @@ class DataBase(ABC):
 
     def _verifica_rastreio(self,codigo:str='') -> list:
         """verificar Rastreio
+
         Aqui faremos a verificação do Rastreio no banco de 
         dados e veremos se já existe este rastreio e se até 
         mesmo o user já inseriu esse rastreio, mas se não 
@@ -231,6 +244,7 @@ class DataBase(ABC):
     
     def select_rastreio(self,id_user:str='') -> list:
         """Select Rastreio
+
         Aqui pegaremos todos os rastreios do user
         """
         if((id_user == '') or (not isinstance(id_user,str))):
@@ -246,6 +260,7 @@ class DataBase(ABC):
 
     def delete_rastreio(self,id_user:str='',codigo:str='') -> bool:
         """Delete Rastreio
+
         Aqui deletaremos o rastreio atribuído ao user
         """
         if((id_user == '') or (not isinstance(id_user,str))):
@@ -269,6 +284,7 @@ class DataBase(ABC):
 
     def atualiza_rastreio(self) -> list:
         """Atualiza Rastreio
+
         Aqui veremos se o rastreio precisa ser atualizado e quem
         fez a solicitação desse rastreio
         """
@@ -293,6 +309,7 @@ class DataBase(ABC):
     
     def validar_rastreio(self) -> Union[int,float]:
         """Validar Rastreio
+
         Aqui veremos quanto tempo faz que não atualizamos as
         informações dos rastreios
         """
@@ -307,6 +324,7 @@ class DataBase(ABC):
 
     def update_rastreio(self,tupla:tuple=[]) -> None:
         """Update Rastreio
+
         Aqui faremos a atualização das informações do rastreio
         no banco de dados
         \ntupla = ('codigo', 'informacoes',);
@@ -335,13 +353,15 @@ class DataBase(ABC):
     # -----------------------
     def insert_mensagem(self,tupla:tuple=[]) -> None:
         """Insert Mensagem
+
         Aqui salvaremos a mensagem que o user nos enviou como
         uma forma de segurança contra algum possível ato
         criminoso. 
         """
-        comando = ( "INSERT INTO mensagem "
-                    "(id_user, dia, log_mensagem) "
-                    "VALUES(%s,now(),%s) ");
+        comando:str = ( 
+            " INSERT INTO mensagem "
+            " (id_user, dia, log_mensagem) "
+            " VALUES(%s,now(),%s) ");
         if(not isinstance(tupla,tuple)):
             return;
         elif(len(tupla) != 2):
@@ -349,6 +369,246 @@ class DataBase(ABC):
             # tupla = ('id_user', 'mensagem');
             return;
         self._insert(comando=comando,tupla=tupla);
+    # -----------------------
+    # Horário do Remédio
+    # -----------------------
+    def insert_hora_do_remedio(self,tupla:tuple=[]) -> bool:
+        """Insert Horário do Remédio
+
+        :param  - tupla:tuple(id_user,hora,nome)
+        :return - None 
+        
+        Aqui nós iremos fazer a inserção do horário do remédio
+        do cliente.
+        """
+        retorno:bool = False;
+
+        if(not isinstance(tupla,tuple)):
+            return retorno;
+        elif(len(tupla) != 3):
+            return retorno;
+        
+        id_user     :str = str(tupla[0]);
+        hora        :str = str(tupla[1]);
+        nome_remedio:str = str(tupla[2]);
+
+        if(id_user == ''):
+            return retorno;
+        if(hora == ''):
+            return retorno;
+
+        id_hora:str = self._pega_id_hora_do_remedio(hora=hora);
+
+        if(int(id_hora) <= 0):
+            return retorno;
+
+        tupla_insert  :tuple = (id_user,id_hora,nome_remedio,);
+        comando_insert:str   = (
+            "INSERT INTO solicitacao_hora_do_remedio"
+            "(id_user, id_hora, nome_remedio)"
+            "VALUES(%s,%s,%s)"
+        );
+        
+        tupla_verifica  :tuple  = (id_user,id_hora,);
+        retorno_verifica:bool   = self._verifica_user_hora_do_remedio(
+                                    tupla=tupla_verifica);
+
+        if(retorno_verifica):
+            return retorno;
+        retorno = True;
+        self._insert(
+            comando=comando_insert,
+            tupla=tupla_insert
+        );
+        return retorno;
+    
+    def _verifica_user_hora_do_remedio(self,tupla:tuple=[]) -> bool:
+        """Verifica user Horário do Remédio
+
+        :param  - tupla:tuple(id_user,id_hora)
+        :return - bool 
+        
+        Aqui nós iremos verificar se o cliente já não tem a 
+        solicitação nesse mesmo horário.
+        """
+        if(not isinstance(tupla,tuple)):
+            return True;
+        elif(len(tupla) != 2):
+            return True;
+        
+        id_user:str = str(tupla[0]);
+        id_hora:str = str(tupla[1]);
+        
+        if((not isinstance(id_user,str)) or (id_user == '')):
+            return True;
+        if((not isinstance(id_hora,str)) or (id_hora == '')):
+            return True;
+
+        comando_select:str = (
+            f" SELECT * "
+            f" FROM solicitacao_hora_do_remedio "
+            f" WHERE id_user = '{id_user}' "
+            f" AND id_hora = '{id_hora}'"
+        );
+
+        retorno_select:list = self._select(comando=comando_select);
+
+        if(retorno_select == []):
+            return False;
+        return True;
+    
+    def _pega_id_hora_do_remedio(self,hora:str,cria:bool=True
+                                ) -> Union[str,int]:
+        """Pega ID da Hora do Remédio
+
+        :param  - hora:str  hora do remédio do cliente
+        :param  - cria:bool Verifica se precisa criar o horário 
+        :return - ID:( str | int ) 
+        
+        Aqui nós iremos pegar o id da hora do remédio, mas 
+        se não existir então vamos criar o id.
+        """
+        if((not isinstance(hora,str)) or (hora == '')):
+            return -1;
+        
+        comando_select:str = (
+            f" SELECT id "
+            f" FROM hora_do_remedio "
+            f" WHERE hora = '{hora}' "
+        );
+
+        retorno_select:list = self._select(comando=comando_select);
+        
+        if(retorno_select == []):
+            if(not cria):
+                return -1;
+            comando_insert:str = (
+                " INSERT INTO hora_do_remedio "
+                " (hora, atualizacao) "
+                " VALUES(%s,%s) "
+            );
+            data        :str   = '0000:00:00';
+            tupla_insert:tuple = (hora,data,);
+            
+            self._insert(
+                comando=comando_insert,
+                tupla=tupla_insert
+            );
+            return self._pega_id_hora_do_remedio(hora=hora);
+        return retorno_select[0][0];
+    
+    def verifica_hora_do_remedio(self) -> list:
+        """Verifica Hora do Remédio
+
+        :param  - hora:str hora atual
+        :return - [ID,nome_remedio]*n:list
+        
+        Aqui nós iremos verificar se tem algum remédio no banco
+        que precisa ser atualizado.
+        """
+        retorno:list = []; 
+
+        hora:str = datetime.today().strftime('%H:%M');
+        dia :str = datetime.today().strftime('%Y:%m:%d');
+
+        comando_select:str = (
+            f" SELECT id "
+            f" FROM hora_do_remedio "
+            f" WHERE atualizacao < '{dia}' "
+            f" AND hora = '{hora}' "
+        );
+
+        retorno_select:list = self._select(comando=comando_select);
+
+        if(retorno_select != []):
+            id_hora       :str = retorno_select[0][0];
+            comando_update:str = (
+                f" UPDATE hora_do_remedio "
+                f" SET atualizacao='{dia}' "
+                f" WHERE id ='{id_hora}' "
+            );
+
+            self._update(comando=comando_update);
+            
+            comando_select = (
+                f" SELECT id_user, nome_remedio "
+                f" FROM solicitacao_hora_do_remedio "
+                f" WHERE id_hora = '{id_hora}' "
+            );
+            retorno = self._select(comando=comando_select);
+        return retorno;
+    
+    def delete_hora_do_remedio(self,tupla:tuple=[]) -> bool:
+        """Delete Hora do Remédio
+
+        :param  - tupla:tuple = (id_user,hora)
+        :return - bool 
+        
+        Aqui nós iremos deletar um horário do remédio do user que 
+        solicitar.
+        """
+        retorno:bool = False;
+
+        if(not isinstance(tupla,tuple)):
+            return retorno;
+        elif(len(tupla) != 2):
+            return retorno;
+
+        id_user:str = str(tupla[0]);
+        hora   :str = str(tupla[1]);
+        
+        if(id_user == ''):
+            return retorno;
+
+        id_hora:str = str(self._pega_id_hora_do_remedio(
+            hora=hora,
+            cria=False
+        ));
+        
+        if(id_hora == ''):
+            return retorno;
+
+        if(int(id_hora) <= 0):
+            return retorno;
+        
+        tupla_verifica  :tuple  = (id_user,id_hora,);
+        retorno_verifica:bool   = self._verifica_user_hora_do_remedio(
+                                    tupla=tupla_verifica);
+        
+        if(retorno_verifica):
+            comando_delete:str = (
+                f" DELETE FROM "
+                f" solicitacao_hora_do_remedio "
+                f" WHERE id_hora = '{id_hora}' "
+            );
+            self._delete(comando=comando_delete);
+            retorno = True;
+        return retorno;
+    
+    def list_hora_do_remedio_user(self,id_user:str='') -> list:
+        """Lista da Hora do Remédio do user
+
+        :param  - id_user:str
+        :return - list:[hora, nome_remedio]*n
+        
+        Aqui nós iremos listar todos os remédios dos user.
+        """
+        retorno:list = [];
+
+        if((not isinstance(id_user,str)) or (id_user == '')):
+            return retorno;
+
+        comando_select:str = (
+            f" SELECT hora, nome_remedio "
+            f" FROM solicitacao_hora_do_remedio "
+            f" INNER JOIN hora_do_remedio " 
+            f" ON hora_do_remedio.id = " 
+            f" solicitacao_hora_do_remedio.id_hora " 
+            f" WHERE id_user = '{id_user}' "
+        )
+        retorno = self._select(comando=comando_select);
+        return retorno;
+    # -----------------------
 #-----------------------
 # FUNÇÕES
 #-----------------------
